@@ -52,7 +52,7 @@ export default function Violations() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h1 className="mr-auto text-lg font-semibold">Over-speeding violations</h1>
+        <h1 className="mr-auto text-xl font-semibold tracking-tight">Over-speeding violations</h1>
         <button className={btn} onClick={() => exportAll('csv')}><Download className="size-4" />CSV</button>
         <button className={btn} onClick={() => exportAll('pdf')}><FileText className="size-4" />PDF</button>
       </div>

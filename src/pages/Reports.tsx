@@ -169,7 +169,7 @@ export default function Reports() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="mr-auto text-lg font-semibold">Reports</h1>
+        <h1 className="mr-auto text-xl font-semibold tracking-tight">Reports</h1>
         <Segmented label="Report type" value={kind} onChange={setKind} options={KINDS} />
         <select aria-label="Scope" value={scope} onChange={(e) => setScope(e.target.value)} className={input}>
           <option value="ALL">All intersections</option>

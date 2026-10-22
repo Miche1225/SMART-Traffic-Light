@@ -122,7 +122,7 @@ export function CameraTile({ camera, label, overlay, onOpen }: { camera: Camera;
   }
 
   return (
-    <article className="min-w-0 overflow-hidden rounded-lg border border-slate-800 bg-slate-950">
+    <article className="min-w-0 overflow-hidden rounded-lg border border-slate-800 bg-slate-950 shadow-lg shadow-black/20 transition-colors hover:border-sky-700/60">
       <header className="flex items-center gap-2 border-b border-slate-800 px-2.5 py-1.5 text-xs">
         <span className="min-w-0 flex-1 truncate" title={label}>
           <b className="font-semibold text-slate-200">{label}</b> — Channel {camera.channel} (Approach: {APPROACH_LABEL[camera.approach]})
@@ -140,7 +140,7 @@ export function CameraTile({ camera, label, overlay, onOpen }: { camera: Camera;
       </header>
       <div className={cx('relative aspect-video bg-slate-900', onOpen && 'cursor-zoom-in')} onClick={onOpen}>
         {!online ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-slate-800 text-sm text-slate-400">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-slate-900 bg-[repeating-linear-gradient(135deg,transparent_0_12px,rgb(148_163_184/0.06)_12px_24px)] text-sm text-slate-400">
             <VideoOff className="size-6" />
             Camera Offline — last seen {fmtTime(lastSeen)}
           </div>
@@ -152,12 +152,12 @@ export function CameraTile({ camera, label, overlay, onOpen }: { camera: Camera;
             {!sim && camera.streamType === 'WEBRTC' && <div className="absolute inset-0 grid place-items-center text-xs text-slate-500">WebRTC stream not supported yet</div>}
             <canvas ref={canvas} className="absolute inset-0 size-full" aria-label={`${count} vehicles detected`} role="img" />
             <div className="pointer-events-none absolute left-2 top-2 flex gap-1.5 text-[11px] font-medium">
-              <span className="inline-flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5">
-                <span className={cx('size-1.5 rounded-full', status === 'ONLINE' ? 'bg-green-500' : 'bg-yellow-500')} aria-hidden />
+              <span className="inline-flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5 backdrop-blur-sm">
+                <span className={cx('size-1.5 rounded-full', status === 'ONLINE' ? 'bg-red-500 motion-safe:animate-pulse' : 'bg-yellow-500')} aria-hidden />
                 {status === 'ONLINE' ? 'Live' : 'Degraded'}
               </span>
-              <span className="rounded bg-black/60 px-1.5 py-0.5 tabular-nums">{count} vehicles</span>
-              <span className="rounded bg-black/60 px-1.5 py-0.5 tabular-nums">{camera.fps} FPS</span>
+              <span className="rounded bg-black/60 px-1.5 py-0.5 tabular-nums backdrop-blur-sm">{count} vehicles</span>
+              <span className="rounded bg-black/60 px-1.5 py-0.5 tabular-nums backdrop-blur-sm">{camera.fps} FPS</span>
             </div>
           </>
         )}

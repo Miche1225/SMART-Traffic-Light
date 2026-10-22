@@ -25,9 +25,20 @@ export function IntersectionDiagram({ signal, lanes }: { signal?: SignalState; l
   return (
     <div>
       <svg viewBox="0 0 300 300" className="mx-auto w-full max-w-sm" role="img" aria-label="Intersection diagram with signal state and queues">
+        <defs>
+          <filter id="lampGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="5" result="b" />
+            <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
         <rect width="300" height="300" fill="#0b1220" />
         <rect x="110" y="0" width="80" height="300" fill="#1e293b" />
         <rect x="0" y="110" width="300" height="80" fill="#1e293b" />
+        {/* zebra crossings at each mouth of the box */}
+        <g stroke="#334155" strokeWidth="10" strokeDasharray="4 4">
+          <line x1="112" y1="103" x2="190" y2="103" /><line x1="112" y1="197" x2="190" y2="197" />
+          <line x1="103" y1="112" x2="103" y2="190" /><line x1="197" y1="112" x2="197" y2="190" />
+        </g>
         <g stroke="#475569" strokeDasharray="6 6">
           <line x1="150" y1="0" x2="150" y2="110" /><line x1="150" y1="190" x2="150" y2="300" />
           <line x1="0" y1="150" x2="110" y2="150" /><line x1="190" y1="150" x2="300" y2="150" />
@@ -41,7 +52,7 @@ export function IntersectionDiagram({ signal, lanes }: { signal?: SignalState; l
           const [cx, cy] = LAMP[a];
           return (
             <g key={a}>
-              <circle cx={cx} cy={cy} r="17" fill={p ? SIGNAL_COLORS[p.color] : '#334155'} stroke="#0f172a" strokeWidth="3" />
+              <circle cx={cx} cy={cy} r="17" fill={p ? SIGNAL_COLORS[p.color] : '#334155'} stroke="#0f172a" strokeWidth="3" filter={p && p.color !== 'OFF' ? 'url(#lampGlow)' : undefined} />
               <text x={cx} y={cy + 4} textAnchor="middle" fontSize="11" fontWeight="700" fill="#0f172a">
                 {p ? (hold && p.color === 'GREEN' ? 'HOLD' : p.remainingSec) : '–'}
               </text>

@@ -256,7 +256,7 @@ export default function IntersectionDetail() {
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
             <div className="mr-auto">
-              <h1 className="text-lg font-semibold">{int.name}</h1>
+              <h1 className="text-xl font-semibold tracking-tight">{int.name}</h1>
               <p className="text-sm text-slate-400">Brgy. {int.barangay} · Speed limit {int.speedLimitKph} km/h</p>
             </div>
             <StatusBadge status={int.status} />

@@ -18,7 +18,7 @@ export default function Intersections() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold">Intersections</h1>
+      <h1 className="text-xl font-semibold tracking-tight">Intersections</h1>
       <Card>
         <div className="mb-3 flex flex-wrap gap-2">
           <input type="search" placeholder="Search name…" aria-label="Search intersections" value={q} onChange={(e) => setQ(e.target.value)} className={input} />

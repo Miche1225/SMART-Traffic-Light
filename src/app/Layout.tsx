@@ -1,6 +1,7 @@
-import { Bell, ClipboardList, FileBarChart, Gauge, LayoutDashboard, LogOut, Menu, Settings, TrafficCone, Video, Volume2, VolumeX, WifiOff } from 'lucide-react';
+import { Bell, ClipboardList, FileBarChart, Gauge, LayoutDashboard, LogOut, Maximize, Menu, Minimize, Search, Settings, TrafficCone, Video, Volume2, VolumeX, WifiOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { CommandPalette, type Command } from '../components/CommandPalette';
 import { cx, Toaster } from '../components/ui';
 import { useAlerts } from '../services/api';
 import { connectLive } from '../services/ws';
@@ -36,36 +37,64 @@ function SystemStatus() {
       : kpi && (kpi.camerasOnline < kpi.camerasTotal || kpi.sensorsOnline < kpi.sensorsTotal) ? ['Degraded', 'bg-yellow-500']
         : ['Online', 'bg-green-500'];
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 px-2.5 py-1 text-xs">
-      <span className={cx('size-2 rounded-full', dot)} aria-hidden />
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-950/50 px-2.5 py-1 text-xs">
+      <span className="relative flex size-2" aria-hidden>
+        {ws === 'open' && <span className={cx('absolute inset-0 rounded-full opacity-75 motion-safe:animate-ping', dot)} />}
+        <span className={cx('relative size-2 rounded-full', dot)} />
+      </span>
       System {label}
     </span>
   );
 }
 
-function Topbar({ onMenu }: { onMenu: () => void }) {
+const toggleFullscreen = () => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()).catch(() => {});
+
+function useFullscreen() {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    const f = () => setOn(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', f);
+    return () => document.removeEventListener('fullscreenchange', f);
+  }, []);
+  return on;
+}
+
+const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
+
+function Topbar({ onMenu, onSearch }: { onMenu: () => void; onSearch: () => void }) {
   const { user, logout } = useAuth();
   const sound = useLive((s) => s.sound);
+  const full = useFullscreen();
   const unread = useAlerts({ ack: 'false' }).data?.length ?? 0;
+  useEffect(() => { document.title = `${unread ? `(${unread}) ` : ''}SMART Traffic Light — LGU Dashboard`; }, [unread]);
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-slate-800 bg-slate-900 px-3">
+    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-slate-800/80 bg-slate-900/70 px-3 backdrop-blur">
       <button onClick={onMenu} aria-label="Toggle sidebar" className="rounded p-1.5 text-slate-400 hover:bg-slate-800"><Menu className="size-5" /></button>
       <div className="flex items-center gap-2">
-        <span className="grid size-8 place-items-center rounded-full bg-sky-600 text-[10px] font-bold text-white" aria-label="LGU logo">LGU</span>
+        <span className="grid size-8 place-items-center rounded-full bg-linear-to-br from-sky-500 to-indigo-600 text-[10px] font-bold text-white shadow-md shadow-sky-950" aria-label="LGU logo">LGU</span>
         <div className="leading-tight">
-          <div className="text-sm font-semibold">SMART Traffic Light</div>
+          <div className="text-sm font-semibold tracking-tight">SMART Traffic Light</div>
           <div className="hidden text-xs text-slate-500 sm:block">LGU Monitoring Dashboard</div>
         </div>
       </div>
+      <button onClick={onSearch} className="ml-4 hidden w-64 items-center gap-2 rounded-md border border-slate-700 bg-slate-950/60 px-2.5 py-1.5 text-sm text-slate-500 transition-colors hover:border-slate-600 hover:text-slate-300 md:flex">
+        <Search className="size-4" />
+        <span className="flex-1 text-left">Search…</span>
+        <kbd className="rounded border border-slate-700 px-1.5 text-[10px] font-medium">{isMac ? '⌘' : 'Ctrl'} K</kbd>
+      </button>
       <div className="ml-auto flex items-center gap-3">
+        <button onClick={onSearch} aria-label="Search" className="rounded p-1.5 text-slate-400 hover:bg-slate-800 md:hidden"><Search className="size-5" /></button>
         <Clock />
         <SystemStatus />
-        <button onClick={toggleSound} aria-pressed={sound} aria-label={sound ? 'Mute critical alert sound' : 'Enable critical alert sound'} title="Critical alert sound" className="rounded p-1.5 text-slate-400 hover:bg-slate-800">
+        <button onClick={toggleSound} aria-pressed={sound} aria-label={sound ? 'Mute critical alerts' : 'Enable critical alert sound and desktop notifications'} title="Critical alert sound & desktop notifications" className="rounded p-1.5 text-slate-400 hover:bg-slate-800">
           {sound ? <Volume2 className="size-5" /> : <VolumeX className="size-5" />}
+        </button>
+        <button onClick={toggleFullscreen} aria-pressed={full} aria-label={full ? 'Exit full screen' : 'Full screen (control-room mode)'} title="Full screen" className="rounded p-1.5 text-slate-400 hover:bg-slate-800">
+          {full ? <Minimize className="size-5" /> : <Maximize className="size-5" />}
         </button>
         <Link to="/alerts" aria-label={`${unread} unacknowledged alerts`} className="relative rounded p-1.5 text-slate-400 hover:bg-slate-800">
           <Bell className="size-5" />
-          {unread > 0 && <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-red-600 px-1 text-center text-[10px] font-bold text-white tabular-nums">{unread}</span>}
+          {unread > 0 && <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-red-600 px-1 text-center text-[10px] font-bold text-white tabular-nums ring-2 ring-slate-900">{unread}</span>}
         </Link>
         <div className="hidden text-right text-xs leading-tight sm:block">
           <div className="text-slate-200">{user?.name}</div>
@@ -81,19 +110,36 @@ export default function Layout() {
   const token = useAuth((s) => s.token)!;
   const role = useAuth((s) => s.user?.role);
   const ws = useLive((s) => s.ws);
+  const { pathname } = useLocation();
   const [collapsed, setCollapsed] = useState(() => window.innerWidth < 1024);
+  const [palette, setPalette] = useState(false);
+  const logout = useAuth((s) => s.logout);
   useEffect(() => connectLive(token), [token]);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setPalette((p) => !p); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+  const nav = NAV.filter((n) => !n.roles || (role && n.roles.includes(role)));
+  const commands: Command[] = [
+    ...nav.map((n) => ({ id: `page${n.to}`, label: n.label, group: 'Page', icon: <n.icon className="size-4" />, to: n.to })),
+    { id: 'act-full', label: 'Toggle full screen', group: 'Action', icon: <Maximize className="size-4" />, run: toggleFullscreen },
+    { id: 'act-sound', label: 'Toggle critical alert sound & notifications', group: 'Action', icon: <Volume2 className="size-4" />, run: toggleSound },
+    { id: 'act-out', label: 'Sign out', group: 'Action', icon: <LogOut className="size-4" />, run: logout },
+  ];
 
   return (
     <div className="flex h-dvh">
-      <nav aria-label="Main" className={cx('shrink-0 border-r border-slate-800 bg-slate-900 py-3 transition-[width]', collapsed ? 'w-14' : 'w-56')}>
-        {NAV.filter((n) => !n.roles || (role && n.roles.includes(role))).map((n) => (
+      <nav aria-label="Main" className={cx('shrink-0 border-r border-slate-800/80 bg-slate-900/70 py-3 backdrop-blur transition-[width]', collapsed ? 'w-14' : 'w-56')}>
+        {nav.map((n) => (
           <NavLink
             key={n.to}
             to={n.to}
             end={n.to === '/'}
             title={n.label}
-            className={({ isActive }) => cx('mx-2 flex items-center gap-3 rounded-md px-2.5 py-2 text-sm', isActive ? 'bg-sky-600/20 text-sky-300' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200')}
+            className={({ isActive }) => cx('relative mx-2 flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors', isActive ? 'bg-sky-500/15 text-sky-300 before:absolute before:inset-y-1.5 before:-left-2 before:w-1 before:rounded-r before:bg-sky-400' : 'text-slate-400 hover:bg-slate-800/70 hover:text-slate-200')}
           >
             <n.icon className="size-5 shrink-0" />
             <span className={cx(collapsed && 'sr-only')}>{n.label}</span>
@@ -101,15 +147,16 @@ export default function Layout() {
         ))}
       </nav>
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar onMenu={() => setCollapsed((c) => !c)} />
+        <Topbar onMenu={() => setCollapsed((c) => !c)} onSearch={() => setPalette(true)} />
         {ws === 'reconnecting' && (
           <div role="status" className="flex items-center gap-2 bg-yellow-900/60 px-4 py-1.5 text-sm text-yellow-200">
             <WifiOff className="size-4" /> Reconnecting to live feed…
           </div>
         )}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6"><Outlet /></main>
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6"><div key={pathname} className="motion-safe:animate-page-in"><Outlet /></div></main>
       </div>
       <Toaster />
+      <CommandPalette open={palette} onClose={() => setPalette(false)} commands={commands} />
     </div>
   );
 }

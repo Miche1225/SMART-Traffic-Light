@@ -1,23 +1,60 @@
 import { useQueries, useQuery } from '@tanstack/react-query';
-import { Car, Gauge, Radar, Timer, TrendingUp, Video, type LucideIcon } from 'lucide-react';
-import { useState } from 'react';
+import { Activity, Car, Gauge, Radar, Timer, TrendingUp, Video, type LucideIcon } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Area, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { TypeDonut } from '../components/charts';
-import { Async, Card, CongestionBadge, Segmented, SeverityBadge, SignalLight, Skeleton } from '../components/ui';
+import { Async, Card, CongestionBadge, cx, Segmented, SeverityBadge, SignalLight, Skeleton } from '../components/ui';
 import { ViolationTable } from '../components/ViolationTable';
 import { api, hourlyQuery, useAlerts, useHourly, useIntersections } from '../services/api';
-import { OPS, useCan } from '../store/auth';
+import { OPS, useAuth, useCan } from '../store/auth';
 import { useLive } from '../store/live';
 import type { DashboardKpi, Intersection, Paginated, VehicleType, Violation } from '../types';
-import { AXIS_STYLE, fmtTime, INT_COLORS, manilaToday, shortHour, TOOLTIP_STYLE } from '../utils/format';
+import { AXIS_STYLE, fmtDay, fmtTime, INT_COLORS, manilaHour, manilaToday, shortHour, TOOLTIP_STYLE } from '../utils/format';
 
-function Kpi({ icon: Icon, label, value, sub, hint }: { icon: LucideIcon; label: string; value: string | number; sub?: string; hint?: string }) {
+const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/** Eases from the previous value to the new one, so live KPI updates visibly tick. */
+function CountUp({ n }: { n: number }) {
+  const [shown, setShown] = useState(0);
+  const from = useRef(0);
+  useEffect(() => {
+    const start = from.current;
+    if (reduceMotion()) { from.current = n; setShown(n); return; }
+    const t0 = performance.now();
+    let raf = 0;
+    const step = (t: number) => {
+      const p = Math.min(1, (t - t0) / 800);
+      from.current = Math.round(start + (n - start) * (1 - (1 - p) ** 3));
+      setShown(from.current);
+      if (p < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [n]);
+  return <>{shown.toLocaleString()}</>;
+}
+
+const ACCENT = {
+  sky: ['bg-sky-500/10 text-sky-300 ring-sky-500/20', 'bg-sky-500'],
+  violet: ['bg-violet-500/10 text-violet-300 ring-violet-500/20', 'bg-violet-500'],
+  red: ['bg-red-500/10 text-red-300 ring-red-500/20', 'bg-red-500'],
+  emerald: ['bg-emerald-500/10 text-emerald-300 ring-emerald-500/20', 'bg-emerald-500'],
+  amber: ['bg-amber-500/10 text-amber-300 ring-amber-500/20', 'bg-amber-500'],
+  cyan: ['bg-cyan-500/10 text-cyan-300 ring-cyan-500/20', 'bg-cyan-500'],
+};
+
+function Kpi({ icon: Icon, label, value, sub, hint, accent = 'sky' }: { icon: LucideIcon; label: string; value: ReactNode; sub?: ReactNode; hint?: string; accent?: keyof typeof ACCENT }) {
+  const [chip, glow] = ACCENT[accent];
   return (
-    <div className="min-w-0 rounded-xl border border-slate-800 bg-slate-900 p-4" title={hint}>
-      <div className="flex items-center gap-2 text-xs text-slate-400"><Icon className="size-4" />{label}</div>
-      <div className="mt-1 truncate text-2xl font-semibold tabular-nums">{value}</div>
-      {sub && <div className="mt-0.5 truncate text-xs text-slate-500">{sub}</div>}
+    <div className="group relative min-w-0 overflow-hidden rounded-xl border border-slate-800/80 bg-slate-900/80 p-4 shadow-lg shadow-black/10 backdrop-blur transition-colors hover:border-slate-700" title={hint}>
+      <span className={cx('pointer-events-none absolute -right-8 -top-8 size-24 rounded-full opacity-20 blur-2xl transition-opacity group-hover:opacity-40', glow)} aria-hidden />
+      <div className="relative flex items-center gap-2 text-xs font-medium text-slate-400">
+        <span className={cx('grid size-7 place-items-center rounded-lg ring-1 ring-inset', chip)}><Icon className="size-4" /></span>
+        {label}
+      </div>
+      <div className="relative mt-2 truncate text-2xl font-semibold tracking-tight tabular-nums">{value}</div>
+      {sub && <div className="relative mt-0.5 truncate text-xs text-slate-500">{sub}</div>}
     </div>
   );
 }
@@ -33,12 +70,12 @@ function KpiRow() {
   const offline = k.offlineCameras.length ? `Offline: ${k.offlineCameras.join(', ')}` : 'All cameras online';
   return (
     <div className="grid grid-cols-2 gap-4 md:grid-cols-3 2xl:grid-cols-6">
-      <Kpi icon={Car} label="Vehicles Today" value={k.vehiclesToday.toLocaleString()} sub={`${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct).toFixed(1)}% vs yesterday`} />
-      <Kpi icon={TrendingUp} label="Current Peak Intersection" value={k.peakIntersection.name} sub={`${k.peakIntersection.perMin} vehicles/min`} hint={k.peakIntersection.name} />
-      <Kpi icon={Gauge} label="Over-speeding Today" value={k.overspeedToday} sub={k.lastOverspeedAt ? `latest at ${fmtTime(k.lastOverspeedAt)}` : 'none yet'} />
-      <Kpi icon={Video} label="Cameras Online" value={`${k.camerasOnline} / ${k.camerasTotal}`} sub={offline} hint={offline} />
-      <Kpi icon={Radar} label="Sensors Online" value={`${k.sensorsOnline} / ${k.sensorsTotal}`} />
-      <Kpi icon={Timer} label="Avg. Wait Time" value={`${k.avgWaitSec}s`} sub="across all intersections" />
+      <Kpi icon={Car} label="Vehicles Today" value={<CountUp n={k.vehiclesToday} />} sub={<><span className={pct >= 0 ? 'text-green-400' : 'text-red-400'}>{pct >= 0 ? '▲' : '▼'} {Math.abs(pct).toFixed(1)}%</span> vs yesterday</>} />
+      <Kpi accent="violet" icon={TrendingUp} label="Current Peak Intersection" value={k.peakIntersection.name} sub={`${k.peakIntersection.perMin} vehicles/min`} hint={k.peakIntersection.name} />
+      <Kpi accent="red" icon={Gauge} label="Over-speeding Today" value={<CountUp n={k.overspeedToday} />} sub={k.lastOverspeedAt ? `latest at ${fmtTime(k.lastOverspeedAt)}` : 'none yet'} />
+      <Kpi accent="emerald" icon={Video} label="Cameras Online" value={`${k.camerasOnline} / ${k.camerasTotal}`} sub={offline} hint={offline} />
+      <Kpi accent="cyan" icon={Radar} label="Sensors Online" value={`${k.sensorsOnline} / ${k.sensorsTotal}`} />
+      <Kpi accent="amber" icon={Timer} label="Avg. Wait Time" value={`${k.avgWaitSec}s`} sub="across all intersections" />
     </div>
   );
 }
@@ -47,7 +84,7 @@ function IntersectionCard({ i }: { i: Intersection }) {
   const sig = useLive((s) => s.signals[i.id]);
   const last5 = useLive((s) => Object.values(s.lanes).reduce((n, l) => (l.intersectionId === i.id ? n + l.sensor.countLast5Min : n), 0));
   return (
-    <Link to={`/intersections/${i.id}`} className="block rounded-lg border border-slate-800 bg-slate-950/50 p-3 hover:border-slate-600">
+    <Link to={`/intersections/${i.id}`} className="block rounded-lg border border-slate-800 bg-slate-950/50 p-3 transition hover:-translate-y-0.5 hover:border-sky-700/60 hover:bg-slate-950/80 hover:shadow-lg hover:shadow-black/30 motion-reduce:hover:translate-y-0">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="truncate font-medium">{i.name}</div>
@@ -71,7 +108,7 @@ function AlertsFeed() {
         {(alerts) => (
           <ul className="max-h-[22rem] space-y-2 overflow-y-auto pr-1">
             {alerts.slice(0, 20).map((a) => (
-              <li key={a.id} className="rounded-md border border-slate-800 p-2 text-sm">
+              <li key={a.id} className="rounded-md border border-slate-800 bg-slate-950/40 p-2 text-sm transition-colors hover:border-slate-700">
                 <div className="flex items-center justify-between gap-2">
                   <SeverityBadge severity={a.severity} />
                   <time className="text-xs tabular-nums text-slate-500">{fmtTime(a.timestamp)}</time>
@@ -106,7 +143,13 @@ function VolumeCard() {
       <Async q={all} skeleton="h-64">
         {() => (
           <ResponsiveContainer width="100%" height={260}>
-            <LineChart data={rows} margin={{ right: 8 }}>
+            <ComposedChart data={rows} margin={{ right: 8 }}>
+              <defs>
+                <linearGradient id="volFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#38bdf8" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#38bdf8" stopOpacity={0} />
+                </linearGradient>
+              </defs>
               <CartesianGrid stroke="#1e293b" vertical={false} />
               <XAxis dataKey="hour" {...AXIS_STYLE} />
               <YAxis {...AXIS_STYLE} width={44} />
@@ -114,8 +157,8 @@ function VolumeCard() {
               <Legend wrapperStyle={{ fontSize: 12 }} />
               {split === 'split'
                 ? ints.map((i, k) => <Line key={i.id} dataKey={i.id} name={i.name} stroke={INT_COLORS[k % INT_COLORS.length]} dot={false} strokeWidth={2} isAnimationActive={false} />)
-                : <Line dataKey="ALL" name="All intersections" stroke="#38bdf8" dot={false} strokeWidth={2} isAnimationActive={false} />}
-            </LineChart>
+                : <Area dataKey="ALL" name="All intersections" type="monotone" stroke="#38bdf8" fill="url(#volFill)" strokeWidth={2} isAnimationActive={false} />}
+            </ComposedChart>
           </ResponsiveContainer>
         )}
       </Async>
@@ -138,13 +181,41 @@ function DonutCard() {
   );
 }
 
+function Hero() {
+  const name = useAuth((s) => s.user?.name)?.split(' ')[0];
+  const ws = useLive((s) => s.ws);
+  const unread = useAlerts({ ack: 'false' }).data;
+  const critical = unread?.filter((a) => a.severity === 'CRITICAL').length ?? 0;
+  const h = manilaHour();
+  const greet = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  return (
+    <section className="relative overflow-hidden rounded-2xl border border-slate-800/80 bg-linear-to-br from-sky-950/60 via-slate-900/80 to-indigo-950/50 p-5 shadow-lg shadow-black/20">
+      <div className="pointer-events-none absolute -right-16 -top-20 size-64 rounded-full bg-sky-500/15 blur-3xl" aria-hidden />
+      <div className="relative flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-widest text-sky-300/80">{fmtDay(manilaToday())}</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white">{greet}{name && `, ${name}`}</h1>
+          <p className="mt-1 text-sm text-slate-400">
+            {unread == null ? 'Checking city traffic…'
+              : critical ? <><b className="text-red-300">{critical} critical</b> of {unread.length} open alerts need attention.</>
+                : unread.length ? `${unread.length} open alerts, none critical.` : 'All clear. No open alerts across the network.'}
+          </p>
+        </div>
+        <span className={cx('inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset', ws === 'open' ? 'bg-green-500/10 text-green-300 ring-green-500/30' : 'bg-yellow-500/10 text-yellow-200 ring-yellow-500/30')}>
+          <Activity className="size-3.5" />{ws === 'open' ? 'Live feed connected' : 'Live feed reconnecting'}
+        </span>
+      </div>
+    </section>
+  );
+}
+
 export default function Dashboard() {
   const evidence = useCan(OPS);
   const ints = useIntersections();
   const recent = useQuery({ queryKey: ['violations', { size: 10 }], queryFn: () => api<Paginated<Violation>>('/violations?size=10') });
   return (
     <div className="space-y-4">
-      <h1 className="sr-only">Dashboard</h1>
+      <Hero />
       <KpiRow />
       <div className="grid gap-4 xl:grid-cols-3">
         <Card title="Intersections" className="xl:col-span-2">
