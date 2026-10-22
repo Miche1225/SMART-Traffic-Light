@@ -25,6 +25,7 @@ export const laneKey = (l: { intersectionId: string; approach: string; lane: num
 export function toggleSound() {
   const sound = !useLive.getState().sound;
   useLive.setState({ sound });
+  if (sound && 'Notification' in window && Notification.permission === 'default') Notification.requestPermission();
   try { localStorage.setItem('stl-sound', sound ? '1' : '0'); } catch { /* per-session only */ }
 }
 

@@ -49,7 +49,7 @@ export default function LiveView() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="mr-auto text-lg font-semibold">Live View</h1>
+        <h1 className="mr-auto text-xl font-semibold tracking-tight">Live View</h1>
         <select aria-label="Filter by intersection" value={filter} onChange={(e) => setFilter(e.target.value)} className={input}>
           <option value="">All intersections</option>
           {ints.data?.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}

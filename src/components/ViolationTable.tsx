@@ -53,7 +53,14 @@ export function ViolationTable({ rows, evidence = true, selected, onSelect }: { 
                 <td className={cx(td, 'capitalize')}>{v.vehicleType}</td>
                 <td className={cx(td, 'text-right tabular-nums font-semibold')}>{v.speedKph}</td>
                 <td className={cx(td, 'text-right tabular-nums text-slate-400')}>{v.limitKph}</td>
-                <td className={cx(td, 'text-right tabular-nums font-semibold', excessTone(excess))}>+{excess}</td>
+                <td className={cx(td, 'text-right tabular-nums font-semibold', excessTone(excess))}>
+                  <span className="inline-flex items-center gap-2">
+                    <span className="h-1.5 w-12 overflow-hidden rounded-full bg-slate-800" aria-hidden>
+                      <span className="block h-full rounded-full bg-current" style={{ width: `${Math.min(100, (excess / 30) * 100)}%` }} />
+                    </span>
+                    +{excess}
+                  </span>
+                </td>
                 {evidence && <td className={cx(td, 'font-mono')}>{v.plateNumber ?? '—'}</td>}
                 <td className={td}><ViolationStatusBadge status={v.status} /></td>
               </tr>

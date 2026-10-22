@@ -106,7 +106,7 @@ export default function ViolationDetail() {
           return (
             <>
               <div className="flex flex-wrap items-center gap-3">
-                <h1 className="mr-auto text-lg font-semibold">Violation {v.id}</h1>
+                <h1 className="mr-auto text-xl font-semibold tracking-tight">Violation {v.id}</h1>
                 <ViolationStatusBadge status={v.status} />
               </div>
               <div className="grid gap-4 xl:grid-cols-[3fr_2fr]">

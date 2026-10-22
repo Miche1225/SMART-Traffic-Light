@@ -44,7 +44,10 @@ export function handleEvent(e: WsEvent) {
       qc.invalidateQueries({ queryKey: ['alerts'] });
       if (e.data.severity === 'CRITICAL') {
         pushToast('critical', e.data.message);
-        if (useLive.getState().sound) beep();
+        if (useLive.getState().sound) {
+          beep();
+          if (document.hidden && 'Notification' in window && Notification.permission === 'granted') new Notification('Critical traffic alert', { body: e.data.message, tag: 'stl-critical' });
+        }
       }
       break;
   }

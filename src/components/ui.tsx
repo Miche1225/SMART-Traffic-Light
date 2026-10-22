@@ -9,20 +9,20 @@ export const cx = (...c: (string | false | null | undefined)[]) => c.filter(Bool
 export const title = (s: string) => s.charAt(0) + s.slice(1).toLowerCase().replace(/_/g, ' ');
 
 export const btn =
-  'inline-flex items-center justify-center gap-1.5 rounded-md border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm font-medium text-slate-200 hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500';
-export const btnPrimary = `${btn} border-sky-600 bg-sky-600 text-white hover:bg-sky-500`;
+  'inline-flex items-center justify-center gap-1.5 rounded-md border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm font-medium text-slate-200 shadow-sm shadow-black/20 transition-colors hover:border-slate-600 hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500';
+export const btnPrimary = `${btn} border-sky-500 bg-sky-600 text-white shadow-sky-950/50 hover:border-sky-400 hover:bg-sky-500`;
 export const btnDanger = `${btn} border-red-700 bg-red-700 text-white hover:bg-red-600`;
 export const input =
-  'rounded-md border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-2 focus:outline-sky-500';
+  'rounded-md border border-slate-700 bg-slate-950/80 px-2.5 py-1.5 text-sm text-slate-200 transition-colors placeholder:text-slate-500 hover:border-slate-600 focus:border-sky-600 focus:outline-2 focus:outline-sky-500/60';
 export const th = 'px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-slate-500';
 export const td = 'px-3 py-2';
 
 export function Card({ title: t, actions, className, children }: { title?: ReactNode; actions?: ReactNode; className?: string; children: ReactNode }) {
   return (
-    <section className={cx('min-w-0 rounded-xl border border-slate-800 bg-slate-900 p-4', className)}>
+    <section className={cx('min-w-0 rounded-xl border border-slate-800/80 bg-slate-900/80 p-4 shadow-lg shadow-black/10 ring-1 ring-inset ring-white/[0.02] backdrop-blur', className)}>
       {(t || actions) && (
         <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-slate-300">{t}</h2>
+          <h2 className="text-sm font-semibold tracking-tight text-slate-200">{t}</h2>
           {actions}
         </header>
       )}
@@ -31,7 +31,7 @@ export function Card({ title: t, actions, className, children }: { title?: React
   );
 }
 
-export const Skeleton = ({ className }: { className?: string }) => <div className={cx('animate-pulse rounded-md bg-slate-800', className)} />;
+export const Skeleton = ({ className }: { className?: string }) => <div className={cx('animate-pulse rounded-md bg-slate-800/70', className)} />;
 
 /** Loading skeleton, error with retry, and empty state for a query. */
 export function Async<T>({ q, children, empty, skeleton = 'h-32' }: { q: UseQueryResult<T>; children: (d: T) => ReactNode; empty?: (d: T) => boolean; skeleton?: string }) {
@@ -46,8 +46,8 @@ export function Async<T>({ q, children, empty, skeleton = 'h-32' }: { q: UseQuer
     );
   if (empty?.(q.data))
     return (
-      <div className="flex flex-col items-center gap-1 py-8 text-sm text-slate-500">
-        <Inbox className="size-5" />
+      <div className="flex flex-col items-center gap-2 py-10 text-sm text-slate-500">
+        <span className="grid size-10 place-items-center rounded-full bg-slate-800/70 ring-1 ring-inset ring-slate-700"><Inbox className="size-5" /></span>
         Nothing to show
       </div>
     );
@@ -87,7 +87,11 @@ export const ViolationStatusBadge = ({ status }: { status: ViolationStatus }) =>
 /** Colored lamp plus text, never color alone. */
 export const SignalLight = ({ color, label, sec }: { color: SignalColor; label?: string; sec?: number }) => (
   <span className="inline-flex items-center gap-1.5 text-xs">
-    <span className="size-3 shrink-0 rounded-full ring-2 ring-black/30" style={{ background: SIGNAL_COLORS[color] }} aria-hidden />
+    <span
+      className={cx('size-3 shrink-0 rounded-full ring-2 ring-black/30', color === 'FLASHING' && 'motion-safe:animate-pulse')}
+      style={{ background: SIGNAL_COLORS[color], boxShadow: color === 'OFF' ? undefined : `0 0 8px 1px ${SIGNAL_COLORS[color]}99` }}
+      aria-hidden
+    />
     {label && <b className="font-semibold">{label}</b>}
     <span className="text-slate-300">{title(color)}</span>
     {sec != null && <span className="tabular-nums text-slate-400">{sec}s</span>}
@@ -111,14 +115,14 @@ export const TypeChips = ({ counts }: { counts: Partial<Record<VehicleType, numb
 
 export function Segmented<T extends string | number>({ options, value, onChange, label }: { options: readonly { value: T; label: string }[]; value: T; onChange: (v: T) => void; label: string }) {
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex rounded-md border border-slate-700 bg-slate-950 p-0.5">
+    <div role="radiogroup" aria-label={label} className="inline-flex rounded-md border border-slate-700 bg-slate-950/80 p-0.5">
       {options.map((o) => (
         <button
           key={o.value}
           role="radio"
           aria-checked={o.value === value}
           onClick={() => onChange(o.value)}
-          className={cx('rounded px-2.5 py-1 text-xs font-medium', o.value === value ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200')}
+          className={cx('rounded px-2.5 py-1 text-xs font-medium transition-colors', o.value === value ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200')}
         >
           {o.label}
         </button>
@@ -136,7 +140,7 @@ export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: readon
           role="tab"
           aria-selected={t === value}
           onClick={() => onChange(t)}
-          className={cx('-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-sm', t === value ? 'border-sky-500 text-sky-300' : 'border-transparent text-slate-400 hover:text-slate-200')}
+          className={cx('-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors', t === value ? 'border-sky-500 text-sky-300' : 'border-transparent text-slate-400 hover:text-slate-200')}
         >
           {t}
         </button>
@@ -156,7 +160,7 @@ export function Dialog({ open, title: t, onClose, wide, children }: { open: bool
     <dialog
       ref={ref}
       onClose={onClose}
-      className={cx('m-auto rounded-xl border border-slate-700 bg-slate-900 p-5 text-slate-200 backdrop:bg-black/70', wide ? 'w-[96vw] max-w-[1600px]' : 'w-[92vw] max-w-md')}
+      className={cx('m-auto rounded-xl border border-slate-700 bg-slate-900 p-5 text-slate-200 shadow-2xl shadow-black/50 backdrop:bg-black/70 backdrop:backdrop-blur-sm', wide ? 'w-[96vw] max-w-[1600px]' : 'w-[92vw] max-w-md')}
     >
       <div className="mb-3 flex items-center justify-between gap-2">
         <h2 className="text-base font-semibold">{t}</h2>
@@ -206,7 +210,7 @@ export function Toaster() {
   return (
     <div aria-live="polite" className="fixed bottom-4 right-4 z-50 flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2">
       {toasts.map((t) => (
-        <div key={t.id} role={t.tone === 'critical' ? 'alert' : 'status'} className={cx('flex items-start gap-2 rounded-lg border p-3 text-sm shadow-lg', TOAST_STYLE[t.tone])}>
+        <div key={t.id} role={t.tone === 'critical' ? 'alert' : 'status'} className={cx('flex items-start gap-2 rounded-lg border p-3 text-sm shadow-xl shadow-black/40 motion-safe:animate-toast-in', TOAST_STYLE[t.tone])}>
           {t.tone === 'critical' && <AlertTriangle className="mt-0.5 size-4 shrink-0 text-red-400" aria-label="Critical" />}
           <span className="flex-1">{t.text}</span>
           <button onClick={() => dismissToast(t.id)} aria-label="Dismiss" className="text-slate-400 hover:text-white"><X className="size-4" /></button>
