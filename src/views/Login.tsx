@@ -1,23 +1,30 @@
 import { useMutation } from '@tanstack/react-query';
 import { BellRing, Gauge, Video } from 'lucide-react';
-import { useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { btnPrimary, cx, input } from '../components/ui';
 import { api } from '../services/api';
 import { USE_MOCKS } from '../services/ws';
 import { useAuth } from '../store/auth';
 import type { User } from '../types';
 
+/** `?from=` set by middleware; only same-site paths, so the login page can't be used as an open redirect. */
+const returnTo = () => {
+  const from = new URLSearchParams(window.location.search).get('from') ?? '/';
+  return from.startsWith('/') && !from.startsWith('//') ? from : '/';
+};
+
 export default function Login() {
   const { token, login } = useAuth();
-  const nav = useNavigate();
-  const from = (useLocation().state as { from?: string } | null)?.from ?? '/';
+  const router = useRouter();
   const [form, setForm] = useState({ username: '', password: '', remember: true });
   const m = useMutation({
     mutationFn: () => api<{ token: string; user: User }>('/auth/login', { method: 'POST', json: { username: form.username, password: form.password } }),
-    onSuccess: (r) => { login(r.token, r.user, form.remember); nav(from, { replace: true }); },
+    onSuccess: (r) => { login(r.token, r.user, form.remember); router.replace(returnTo()); },
   });
-  if (token) return <Navigate to="/" replace />;
+  // Only for arriving already signed in; a fresh login navigates in onSuccess.
+  useEffect(() => { if (useAuth.getState().token) router.replace(returnTo()); }, [router]);
+  if (token) return null;
 
   return (
     <div className="grid min-h-dvh lg:grid-cols-[1.1fr_1fr]">

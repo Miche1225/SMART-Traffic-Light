@@ -1,7 +1,7 @@
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { Activity, Car, Gauge, Radar, Timer, TrendingUp, Video, type LucideIcon } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { Area, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { TypeDonut } from '../components/charts';
 import { Async, Card, CongestionBadge, cx, Segmented, SeverityBadge, SignalLight, Skeleton } from '../components/ui';
@@ -130,7 +130,7 @@ function IntersectionCard({ i, forecast }: { i: Intersection; forecast?: { now: 
   const sig = useLive((s) => s.signals[i.id]);
   const last5 = useLive((s) => Object.values(s.lanes).reduce((n, l) => (l.intersectionId === i.id ? n + l.sensor.countLast5Min : n), 0));
   return (
-    <Link to={`/intersections/${i.id}`} className="block rounded-lg border border-slate-800 bg-slate-950/50 p-3 transition hover:-translate-y-0.5 hover:border-sky-700/60 hover:bg-slate-950/80 hover:shadow-lg hover:shadow-black/30 motion-reduce:hover:translate-y-0">
+    <Link href={`/intersections/${i.id}`} className="block rounded-lg border border-slate-800 bg-slate-950/50 p-3 transition hover:-translate-y-0.5 hover:border-sky-700/60 hover:bg-slate-950/80 hover:shadow-lg hover:shadow-black/30 motion-reduce:hover:translate-y-0">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="truncate font-medium">{i.name}</div>
@@ -150,7 +150,7 @@ function IntersectionCard({ i, forecast }: { i: Intersection; forecast?: { now: 
 function AlertsFeed() {
   const q = useAlerts();
   return (
-    <Card title="Live alerts" actions={<Link to="/alerts" className="text-xs text-sky-300 hover:underline">View all</Link>}>
+    <Card title="Live alerts" actions={<Link href="/alerts" className="text-xs text-sky-300 hover:underline">View all</Link>}>
       <Async q={q} empty={(d) => !d.length} skeleton="h-72">
         {(alerts) => (
           <ul className="max-h-[22rem] space-y-2 overflow-y-auto pr-1">
@@ -275,7 +275,7 @@ export default function Dashboard() {
         <VolumeCard />
         <DonutCard />
       </div>
-      <Card title="Recent violations" actions={evidence && <Link to="/violations" className="text-xs text-sky-300 hover:underline">View all</Link>}>
+      <Card title="Recent violations" actions={evidence && <Link href="/violations" className="text-xs text-sky-300 hover:underline">View all</Link>}>
         <Async q={recent} empty={(d) => !d.data.length}>{(d) => <ViolationTable rows={d.data} evidence={evidence} />}</Async>
       </Card>
     </div>

@@ -53,7 +53,7 @@ function drawScene(ctx: CanvasRenderingContext2D, w: number, h: number, frame: D
   }
 }
 
-function useHls(video: React.RefObject<HTMLVideoElement>, camera: Camera, active: boolean) {
+function useHls(video: React.RefObject<HTMLVideoElement | null>, camera: Camera, active: boolean) {
   useEffect(() => {
     const v = video.current;
     if (!v || !active || camera.streamType !== 'HLS' || !camera.streamUrl) return;
