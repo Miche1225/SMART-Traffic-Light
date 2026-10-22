@@ -2,6 +2,13 @@
 
 Next.js 15 (App Router) + React 19 + TypeScript + Tailwind. Built from `smart-traffic-light-spec.md`.
 
+# To check the front-end do the following commands 
+
+``` bash
+git clone https://github.com/Miche1225/Smart-Traffic-Light-FrontEnd
+cd Smart-Traffic-Light-FrontEnd
+```
+
 ```bash
 npm install
 npm run dev      # http://localhost:3000 — runs fully on mocks (MSW + fake WebSocket)
