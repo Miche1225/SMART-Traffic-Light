@@ -1,0 +1,72 @@
+import { CheckCheck } from 'lucide-react';
+import { useState } from 'react';
+import { Async, btn, Card, cx, input, SeverityBadge, title } from '../components/ui';
+import { api, useAlerts, useIntersections } from '../services/api';
+import { qc } from '../services/queryClient';
+import { OPS, useCan } from '../store/auth';
+import { pushToast } from '../store/live';
+import type { Alert, AlertType, Severity } from '../types';
+import { fmtDateTime } from '../utils/format';
+
+const TYPES: AlertType[] = ['OVERSPEED', 'CAMERA_OFFLINE', 'SENSOR_FAULT', 'HEAVY_CONGESTION', 'SIGNAL_FAULT', 'MANUAL_OVERRIDE'];
+const SEVERITIES: Severity[] = ['INFO', 'WARNING', 'CRITICAL'];
+
+export default function Alerts() {
+  const ints = useIntersections();
+  const canAck = useCan(OPS);
+  const [f, setF] = useState({ type: '', severity: '', intersectionId: '', ack: '' });
+  const q = useAlerts(f);
+  const nameOf = (id?: string) => ints.data?.find((i) => i.id === id)?.name;
+
+  async function ack(list: Alert[]) {
+    const results = await Promise.allSettled(list.map((a) => api(`/alerts/${a.id}/ack`, { method: 'POST' })));
+    const failed = results.filter((r) => r.status === 'rejected').length;
+    if (failed) pushToast('error', `${failed} of ${list.length} acknowledgements failed`);
+    qc.invalidateQueries({ queryKey: ['alerts'] });
+  }
+
+  const select = (k: keyof typeof f, label: string, options: { value: string; label: string }[]) => (
+    <select aria-label={label} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} className={input}>
+      <option value="">{label}: all</option>
+      {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  );
+  const unacked = q.data?.filter((a) => !a.acknowledged) ?? [];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <h1 className="mr-auto text-lg font-semibold">Alert center</h1>
+        {canAck && <button className={btn} disabled={!unacked.length} onClick={() => ack(unacked)}><CheckCheck className="size-4" />Acknowledge all ({unacked.length})</button>}
+      </div>
+      <Card>
+        <div className="mb-3 flex flex-wrap gap-2">
+          {select('type', 'Type', TYPES.map((t) => ({ value: t, label: title(t) })))}
+          {select('severity', 'Severity', SEVERITIES.map((s) => ({ value: s, label: title(s) })))}
+          {select('intersectionId', 'Intersection', ints.data?.map((i) => ({ value: i.id, label: i.name })) ?? [])}
+          {select('ack', 'State', [{ value: 'false', label: 'Unacknowledged' }, { value: 'true', label: 'Acknowledged' }])}
+        </div>
+        <Async q={q} empty={(d) => !d.length} skeleton="h-96">
+          {(list) => (
+            <ul className="divide-y divide-slate-800/70">
+              {list.map((a) => (
+                <li key={a.id} className={cx('flex flex-wrap items-center gap-3 py-2.5 text-sm', a.acknowledged && 'opacity-60')}>
+                  <SeverityBadge severity={a.severity} />
+                  <span className="w-36 text-xs uppercase tracking-wide text-slate-400">{title(a.type)}</span>
+                  <span className="min-w-0 flex-1">
+                    {a.message}
+                    {nameOf(a.intersectionId) && <span className="block text-xs text-slate-500">{nameOf(a.intersectionId)}</span>}
+                  </span>
+                  <time className="text-xs tabular-nums text-slate-500">{fmtDateTime(a.timestamp)}</time>
+                  {a.acknowledged ? <span className="w-24 text-right text-xs text-slate-500">Acknowledged</span>
+                    : canAck ? <button className={cx(btn, 'w-24')} onClick={() => ack([a])}>Acknowledge</button>
+                      : <span className="w-24" />}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Async>
+      </Card>
+    </div>
+  );
+}
