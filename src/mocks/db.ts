@@ -1,11 +1,11 @@
 import type {
-  Alert, AlertType, Approach, Camera, CongestionLevel, DailySummaryReport, DashboardKpi, Detection, DetectionFrame,
-  DistanceLevel, HourlyTraffic, Intersection, LaneStatus, SensorReading, Severity, SignalMode, SignalState,
+  Alert, AlertType, Camera, CongestionLevel, DailySummaryReport, DashboardKpi, Detection, DetectionFrame,
+  DistanceLevel, HourlyTraffic, Intersection, LaneStatus, SensorReading, Severity, SignalState,
   UltrasonicSensor, User, VehicleType, Violation, ViolationStatus, WeeklyReport, WsEvent,
 } from '../types';
 import { addDays, APPROACHES, manilaDateOf, manilaHour, manilaToday, VEHICLE_COLORS } from '../utils/format';
 import { peakStats } from '../utils/report';
-import { AXIS, extend, force, phasesOf, stepSignal, type Axis, type Ctl } from './signal';
+import { AXIS, phasesOf, stepSignal, type Axis, type Ctl } from './signal';
 
 // In-memory "backend": seed data plus a small simulation the REST handlers read and the fake WebSocket pushes.
 
@@ -185,17 +185,6 @@ export function tickSecond() {
     const worst = Math.max(0, ...laneSims.filter((l) => l.sensor.intersectionId === i.id).map((l) => LEVELS.indexOf(density(l.queue.length))));
     i.congestion = LEVELS[worst];
   }
-}
-
-export function override(id: string, body: { mode?: SignalMode; approach?: Approach; extendSec?: number }, by: string): SignalState {
-  const int = findIntersection(id)!;
-  const c = ctls[id];
-  const done: string[] = [];
-  if (body.mode && body.mode !== int.mode) { int.mode = body.mode; done.push(`set mode to ${body.mode}`); }
-  if (body.approach) { force(c, body.approach, greenFor(id, AXIS[body.approach])); done.push(`forced green for ${body.approach} approach`); }
-  if (body.extendSec) { extend(c, body.extendSec); done.push(`extended green by ${body.extendSec}s`); }
-  if (done.length) pushAlert('MANUAL_OVERRIDE', 'INFO', `${by} ${done.join(', ')} at ${int.name}`, id);
-  return signalOf(id);
 }
 
 // ---- detection tracks (per camera) --------------------------------------

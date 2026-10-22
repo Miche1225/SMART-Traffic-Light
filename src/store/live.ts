@@ -11,23 +11,13 @@ interface LiveState {
   frames: Record<string, DetectionFrame>;
   devices: Record<string, DeviceStatusEvent>;
   toasts: Toast[];
-  sound: boolean;
 }
 
-const savedSound = () => { try { return localStorage.getItem('stl-sound') === '1'; } catch { return false; } };
-
 export const useLive = create<LiveState>()(() => ({
-  ws: 'connecting', kpi: null, signals: {}, lanes: {}, frames: {}, devices: {}, toasts: [], sound: savedSound(),
+  ws: 'connecting', kpi: null, signals: {}, lanes: {}, frames: {}, devices: {}, toasts: [],
 }));
 
 export const laneKey = (l: { intersectionId: string; approach: string; lane: number }) => `${l.intersectionId}:${l.approach}:${l.lane}`;
-
-export function toggleSound() {
-  const sound = !useLive.getState().sound;
-  useLive.setState({ sound });
-  if (sound && 'Notification' in window && Notification.permission === 'default') Notification.requestPermission();
-  try { localStorage.setItem('stl-sound', sound ? '1' : '0'); } catch { /* per-session only */ }
-}
 
 let toastSeq = 0;
 export const dismissToast = (id: number) => useLive.setState((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }));

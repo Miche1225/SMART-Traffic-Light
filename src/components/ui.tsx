@@ -10,7 +10,7 @@ export const title = (s: string) => s.charAt(0) + s.slice(1).toLowerCase().repla
 
 export const btn =
   'inline-flex items-center justify-center gap-1.5 rounded-md border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm font-medium text-slate-200 shadow-sm shadow-black/20 transition-colors hover:border-slate-600 hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500';
-export const btnPrimary = `${btn} border-sky-500 bg-sky-600 text-white shadow-sky-950/50 hover:border-sky-400 hover:bg-sky-500`;
+export const btnPrimary = `${btn} border-sky-600 bg-sky-600 text-white hover:border-sky-500 hover:bg-sky-500`;
 export const btnDanger = `${btn} border-red-700 bg-red-700 text-white hover:bg-red-600`;
 export const input =
   'rounded-md border border-slate-700 bg-slate-950/80 px-2.5 py-1.5 text-sm text-slate-200 transition-colors placeholder:text-slate-500 hover:border-slate-600 focus:border-sky-600 focus:outline-2 focus:outline-sky-500/60';
@@ -19,15 +19,37 @@ export const td = 'px-3 py-2';
 
 export function Card({ title: t, actions, className, children }: { title?: ReactNode; actions?: ReactNode; className?: string; children: ReactNode }) {
   return (
-    <section className={cx('min-w-0 rounded-xl border border-slate-800/80 bg-slate-900/80 p-4 shadow-lg shadow-black/10 ring-1 ring-inset ring-white/[0.02] backdrop-blur', className)}>
+    <section className={cx('min-w-0 rounded-lg border border-slate-800 bg-slate-900 p-4 shadow-sm shadow-black/10', className)}>
       {(t || actions) && (
         <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold tracking-tight text-slate-200">{t}</h2>
+          <h2 className="text-[15px] font-semibold text-slate-100">{t}</h2>
           {actions}
         </header>
       )}
       {children}
     </section>
+  );
+}
+
+/** Page heading with a one-line explanation of what the page is for. */
+export function PageTitle({ title: t, sub }: { title: ReactNode; sub: ReactNode }) {
+  return (
+    <div className="mr-auto min-w-0">
+      <h1 className="text-2xl font-semibold tracking-tight text-slate-100">{t}</h1>
+      <p className="mt-0.5 text-sm text-slate-400">{sub}</p>
+    </div>
+  );
+}
+
+/** A tiny three-lamp signal head; the app's logo. Fixed colors so it reads the same in both themes. */
+export function Logo({ size = 'md' }: { size?: 'md' | 'lg' }) {
+  const lamp = size === 'lg' ? 'size-3' : 'size-2';
+  return (
+    <span className={cx('flex shrink-0 flex-col items-center justify-center gap-1 rounded-md bg-[#0a1326] ring-1 ring-white/15', size === 'lg' ? 'h-14 w-7' : 'h-10 w-5')} aria-hidden>
+      <span className={cx(lamp, 'rounded-full bg-[#ef4444]')} />
+      <span className={cx(lamp, 'rounded-full bg-[#facc15]')} />
+      <span className={cx(lamp, 'rounded-full bg-[#22c55e]')} />
+    </span>
   );
 }
 

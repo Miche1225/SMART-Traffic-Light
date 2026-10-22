@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { CameraTile } from '../components/CameraTile';
-import { Async, btn, Dialog, input, Segmented } from '../components/ui';
+import { Async, btn, Dialog, input, PageTitle, Segmented } from '../components/ui';
 import { useCameras, useIntersections } from '../services/api';
 import { subscribe } from '../services/ws';
 import { useLive } from '../store/live';
@@ -49,12 +49,12 @@ export default function LiveView() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="mr-auto text-xl font-semibold tracking-tight">Live View</h1>
+        <PageTitle title="Live View" sub="Every camera channel with live vehicle detection. Click a camera to see it larger." />
         <select aria-label="Filter by intersection" value={filter} onChange={(e) => setFilter(e.target.value)} className={input}>
           <option value="">All intersections</option>
           {ints.data?.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
         </select>
-        <Segmented label="Grid layout" value={n} onChange={setN} options={GRIDS} />
+        <div className="hidden sm:block"><Segmented label="Grid layout" value={n} onChange={setN} options={GRIDS} /></div>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={overlay} onChange={(e) => setOverlay(e.target.checked)} />
           Bounding boxes
@@ -62,7 +62,7 @@ export default function LiveView() {
       </div>
       <Async q={cams} empty={() => !list.length} skeleton="h-96">
         {() => (
-          <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[repeat(var(--n),minmax(0,1fr))]" style={{ '--n': n } as CSSProperties}>
             {visible.map((c) => <CameraTile key={c.id} camera={c} label={nameOf(c.intersectionId)} overlay={overlay} onOpen={() => setOpen(c)} />)}
           </div>
         )}

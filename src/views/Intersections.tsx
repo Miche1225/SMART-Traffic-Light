@@ -1,7 +1,7 @@
 import { useQueries } from '@tanstack/react-query';
 import { useState } from 'react';
 import Link from 'next/link';
-import { Async, Card, CongestionBadge, cx, input, StatusBadge, td, th } from '../components/ui';
+import { Async, Card, CongestionBadge, cx, input, PageTitle, StatusBadge, td, th } from '../components/ui';
 import { hourlyQuery, useCameras, useIntersections, useSensors } from '../services/api';
 import { manilaToday } from '../utils/format';
 
@@ -18,7 +18,7 @@ export default function Intersections() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold tracking-tight">Intersections</h1>
+      <PageTitle title="Intersections" sub="Every monitored junction, its traffic level and the health of its cameras and sensors." />
       <Card>
         <div className="mb-3 flex flex-wrap gap-2">
           <input type="search" placeholder="Search name…" aria-label="Search intersections" value={q} onChange={(e) => setQ(e.target.value)} className={input} />
@@ -34,8 +34,34 @@ export default function Intersections() {
           </select>
         </div>
         <Async q={ints} empty={(d) => !d.length}>
-          {(list) => (
-            <div className="overflow-x-auto">
+          {(all) => {
+            const list = all
+              .map((i, k) => ({ i, today: hourly[k]?.data?.reduce((s, h) => s + h.total, 0) }))
+              .filter(({ i }) => i.name.toLowerCase().includes(q.toLowerCase()) && (!brgy || i.barangay === brgy) && (!status || i.status === status));
+            return (
+            <>
+            <ul className="space-y-2 md:hidden">
+              {list.map(({ i, today: n }) => (
+                <li key={i.id}>
+                  <Link href={`/intersections/${i.id}`} className="block rounded-md border border-slate-800 bg-slate-950/40 p-3 hover:border-sky-700/60">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-sky-300">{i.name}</div>
+                        <div className="text-xs text-slate-400">Brgy. {i.barangay}</div>
+                      </div>
+                      <CongestionBadge level={i.congestion} />
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
+                      <StatusBadge status={i.status} />
+                      <span>{cams.filter((c) => c.intersectionId === i.id).length} cameras</span>
+                      <span>{sensors.filter((s) => s.intersectionId === i.id).length} sensors</span>
+                      <span><b className="tabular-nums text-slate-200">{n?.toLocaleString() ?? '…'}</b> vehicles today</span>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-sm">
                 <thead className="border-b border-slate-800">
                   <tr>
@@ -43,10 +69,7 @@ export default function Intersections() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/70">
-                  {list
-                    .map((i, k) => ({ i, today: hourly[k]?.data?.reduce((s, h) => s + h.total, 0) }))
-                    .filter(({ i }) => i.name.toLowerCase().includes(q.toLowerCase()) && (!brgy || i.barangay === brgy) && (!status || i.status === status))
-                    .map(({ i, today: n }) => (
+                  {list.map(({ i, today: n }) => (
                       <tr key={i.id} className="hover:bg-slate-800/40">
                         <td className={td}><Link href={`/intersections/${i.id}`} className="font-medium text-sky-300 hover:underline">{i.name}</Link></td>
                         <td className={td}>{i.barangay}</td>
@@ -61,7 +84,9 @@ export default function Intersections() {
                 </tbody>
               </table>
             </div>
-          )}
+            </>
+            );
+          }}
         </Async>
       </Card>
     </div>

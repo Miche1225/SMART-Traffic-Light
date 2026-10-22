@@ -84,12 +84,10 @@
 }
 body {
   @apply bg-slate-950 text-slate-200 antialiased;
-  font-family: Inter, system-ui, sans-serif;
-  background-image:
-    radial-gradient(60rem 30rem at 100% -10%, rgb(14 165 233 / 0.08), transparent 70%),
-    radial-gradient(40rem 24rem at -10% 110%, rgb(99 102 241 / 0.06), transparent 70%);
-  background-attachment: fixed;
+  font-family: 'Public Sans', system-ui, sans-serif;
 }
+/* Dark mode: deep blue-grey with a soft lift at the top, so it isn't flat black. */
+:root:not(.light) body { background: linear-gradient(180deg, #111c30 0%, #0b1220 420px) fixed; }
 ::selection { @apply bg-sky-500/30 text-white; }
 
 * { scrollbar-width: thin; scrollbar-color: var(--color-slate-700) transparent; }

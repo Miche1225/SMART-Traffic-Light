@@ -4,19 +4,9 @@ import { qc } from './queryClient';
 
 export const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS !== 'false';
 
-let audio: AudioContext | undefined;
-function beep() {
-  try {
-    audio ??= new AudioContext();
-    const o = audio.createOscillator();
-    const g = audio.createGain();
-    o.frequency.value = 880;
-    g.gain.value = 0.1;
-    o.connect(g).connect(audio.destination);
-    o.start();
-    o.stop(audio.currentTime + 0.25);
-  } catch { /* audio is blocked until the user interacts with the page */ }
-}
+/** Intersections a connected Arduino is driving; the mock feed skips them so the two don't fight. */
+export const arduinoOwned = new Set<string>();
+const arduinoDriven = (e: WsEvent) => 'intersectionId' in e.data && arduinoOwned.has(e.data.intersectionId as string);
 
 export function handleEvent(e: WsEvent) {
   const set = useLive.setState;
@@ -42,13 +32,7 @@ export function handleEvent(e: WsEvent) {
       break;
     case 'alert.new':
       qc.invalidateQueries({ queryKey: ['alerts'] });
-      if (e.data.severity === 'CRITICAL') {
-        pushToast('critical', e.data.message);
-        if (useLive.getState().sound) {
-          beep();
-          if (document.hidden && 'Notification' in window && Notification.permission === 'granted') new Notification('Critical traffic alert', { body: e.data.message, tag: 'stl-critical' });
-        }
-      }
+      if (e.data.severity === 'CRITICAL') pushToast('critical', e.data.message);
       break;
   }
 }
@@ -69,7 +53,7 @@ export function connectLive(token: string) {
     useLive.setState({ ws: 'open' });
     let off: (() => void) | undefined;
     let dead = false;
-    import('../mocks').then((m) => { if (!dead) off = m.onMockEvent(handleEvent); });
+    import('../mocks').then((m) => { if (!dead) off = m.onMockEvent((e) => { if (!arduinoDriven(e)) handleEvent(e); }); });
     return () => { dead = true; off?.(); };
   }
 

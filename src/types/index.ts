@@ -113,7 +113,7 @@ export interface Violation {
 
 export type AlertType =
   | 'OVERSPEED' | 'CAMERA_OFFLINE' | 'SENSOR_FAULT'
-  | 'HEAVY_CONGESTION' | 'SIGNAL_FAULT' | 'MANUAL_OVERRIDE';
+  | 'HEAVY_CONGESTION' | 'SIGNAL_FAULT';
 export type Severity = 'INFO' | 'WARNING' | 'CRITICAL';
 
 export interface Alert {

@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
-import type { Role, SignalMode, User, Violation } from '../types';
-import { APPROACHES, manilaDateOf, manilaToday } from '../utils/format';
+import type { Role, User, Violation } from '../types';
+import { manilaDateOf, manilaToday } from '../utils/format';
 import * as db from './db';
 
 const B = '/api/v1';
@@ -38,13 +38,6 @@ export const handlers = [
   http.get(`${B}/intersections/:id`, guard(({ id }) => withIntersection(id, () => HttpResponse.json(db.findIntersection(id))))),
   http.get(`${B}/intersections/:id/signal`, guard(({ id }) => withIntersection(id, () => HttpResponse.json(db.signalOf(id))))),
   http.get(`${B}/intersections/:id/lanes`, guard(({ id }) => withIntersection(id, () => HttpResponse.json(db.lanes(id))))),
-  http.post(`${B}/intersections/:id/signal/override`, guard(async ({ id, request, user }) => {
-    const body = (await request.json().catch(() => ({}))) as { mode?: SignalMode; approach?: string; extendSec?: number };
-    if (body.mode && !['ADAPTIVE', 'FIXED', 'MANUAL'].includes(body.mode)) return fail('Invalid mode', 400);
-    if (body.approach && !APPROACHES.includes(body.approach as never)) return fail('Invalid approach', 400);
-    if (body.extendSec !== undefined && ![10, 20].includes(body.extendSec)) return fail('extendSec must be 10 or 20', 400);
-    return withIntersection(id, () => HttpResponse.json(db.override(id, body as Parameters<typeof db.override>[1], user.name)));
-  }, OPS)),
 
   http.get(`${B}/cameras`, guard(({ request }) => {
     const id = sp(request).get('intersectionId');

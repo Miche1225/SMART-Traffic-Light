@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Download, FileText } from 'lucide-react';
 import { useState } from 'react';
-import { Async, btn, Card, cx, input, title } from '../components/ui';
+import { Async, btn, Card, cx, input, PageTitle, title } from '../components/ui';
 import { ViolationTable } from '../components/ViolationTable';
 import { api, qs, useIntersections } from '../services/api';
 import { qc } from '../services/queryClient';
@@ -52,7 +52,7 @@ export default function Violations() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h1 className="mr-auto text-xl font-semibold tracking-tight">Over-speeding violations</h1>
+        <PageTitle title="Over-speeding violations" sub="Vehicles caught above the speed limit. Open one to see the photos and review it." />
         <button className={btn} onClick={() => exportAll('csv')}><Download className="size-4" />CSV</button>
         <button className={btn} onClick={() => exportAll('pdf')}><FileText className="size-4" />PDF</button>
       </div>

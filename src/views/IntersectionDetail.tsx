@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -6,16 +6,15 @@ import { useShallow } from 'zustand/react/shallow';
 import { CameraTile } from '../components/CameraTile';
 import { IntersectionDiagram } from '../components/IntersectionDiagram';
 import {
-  Async, btn, Card, CongestionBadge, cx, input, Segmented, SignalLight, StatusBadge, Tabs, td, th, title, TypeChips, useConfirm,
+  Async, Card, CongestionBadge, cx, input, SignalLight, StatusBadge, Tabs, td, th, title, TypeChips,
 } from '../components/ui';
 import { ViolationTable } from '../components/ViolationTable';
 import { api, qs, useCameras, useHourly, useSensors } from '../services/api';
-import { qc } from '../services/queryClient';
 
 import { OPS, useCan } from '../store/auth';
-import { handleEvent, subscribe } from '../services/ws';
+import { subscribe } from '../services/ws';
 import { useLive } from '../store/live';
-import type { Approach, Intersection, LaneStatus, Paginated, SignalMode, SignalState, VehicleType, Violation } from '../types';
+import type { Intersection, LaneStatus, Paginated, SignalState, VehicleType, Violation } from '../types';
 import {
   APPROACH_LABEL, APPROACHES, AXIS_STYLE, fmtDateTime, fmtTime, GRID, hourRange, manilaToday, shortHour, TOOLTIP_STYLE, VEHICLE_COLORS, VEHICLE_TYPES,
 } from '../utils/format';
@@ -62,55 +61,13 @@ function LanePanel({ lanes, signal }: { lanes: LaneStatus[]; signal?: SignalStat
   );
 }
 
-function OverridePanel({ int }: { int: Intersection }) {
-  const [confirm, dialog] = useConfirm();
-  const m = useMutation({
-    mutationFn: (body: { mode?: SignalMode; approach?: Approach; extendSec?: number }) =>
-      api<SignalState>(`/intersections/${int.id}/signal/override`, { method: 'POST', json: body }),
-    onSuccess: (s) => {
-      handleEvent({ event: 'signal.state', data: s });
-      qc.invalidateQueries({ queryKey: ['intersections'] });
-    },
-  });
-  const ask = (label: string, body: Parameters<typeof m.mutate>[0]) =>
-    confirm({ title: label, body: `${int.name}. This manual action is logged.`, confirmLabel: 'Apply', onConfirm: () => m.mutate(body) });
-
-  return (
-    <Card title="Manual override">
-      {dialog}
-      <div className="space-y-3 text-sm">
-        <div>
-          <div className="mb-1 text-xs text-slate-400">Mode</div>
-          <Segmented label="Signal mode" value={int.mode} onChange={(mode) => mode !== int.mode && ask(`Switch to ${mode} mode`, { mode })}
-            options={(['ADAPTIVE', 'FIXED', 'MANUAL'] as const).map((v) => ({ value: v, label: v }))} />
-        </div>
-        <div>
-          <div className="mb-1 text-xs text-slate-400">Force green for approach</div>
-          <div className="flex flex-wrap gap-2">
-            {APPROACHES.map((a) => <button key={a} className={btn} onClick={() => ask(`Force green: ${APPROACH_LABEL[a]}`, { approach: a })}>{APPROACH_LABEL[a]}</button>)}
-          </div>
-        </div>
-        <div>
-          <div className="mb-1 text-xs text-slate-400">Extend current green</div>
-          <div className="flex gap-2">
-            {[10, 20].map((s) => <button key={s} className={btn} onClick={() => ask(`Extend green +${s}s`, { extendSec: s })}>+{s}s</button>)}
-          </div>
-        </div>
-        {m.isError && <p role="alert" className="text-red-400">{m.error.message}</p>}
-        {m.isSuccess && <p role="status" className="text-green-400">Override applied.</p>}
-      </div>
-    </Card>
-  );
-}
-
 function LiveTab({ int }: { int: Intersection }) {
   const cams = useCameras(int.id);
   const { signal, lanes } = useLiveIntersection(int.id);
-  const canOverride = useCan(OPS);
   const [overlay, setOverlay] = useState(true);
   return (
-    <div className="grid gap-4 xl:grid-cols-3">
-      <div className="space-y-4 xl:col-span-2">
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+      <div className="min-w-0 space-y-4 xl:col-span-2">
         <Card title="Camera channels" actions={
           <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={overlay} onChange={(e) => setOverlay(e.target.checked)} />Bounding boxes</label>
         }>
@@ -124,7 +81,6 @@ function LiveTab({ int }: { int: Intersection }) {
         <Card title="Signal">
           <IntersectionDiagram signal={signal} lanes={lanes} />
         </Card>
-        {canOverride && <OverridePanel int={int} />}
       </div>
     </div>
   );
@@ -144,7 +100,7 @@ function AnalyticsTab({ id }: { id: string }) {
           const peak = hours.reduce((a, b) => (b.total > a.total ? b : a));
           const rows = hours.map((h) => ({ hour: shortHour(h.hour), total: h.total, speed: h.total ? h.avgSpeedKph : null, ...h.byType }));
           return (
-            <div className="grid gap-4 xl:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
               <Card title="Hourly volume" actions={<span className="text-xs text-orange-300">Peak: {hourRange(peak.hour)} ({peak.total.toLocaleString()})</span>}>
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={rows}>
@@ -197,7 +153,7 @@ function DevicesTab({ id }: { id: string }) {
   const cams = useCameras(id);
   const sensors = useSensors(id);
   return (
-    <div className="grid gap-4 xl:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
       <Card title="Cameras">
         <Async q={cams} empty={(d) => !d.length}>
           {(list) => (

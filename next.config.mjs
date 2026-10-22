@@ -1,2 +1,3 @@
 /** @type {import('next').NextConfig} */
-export default { reactStrictMode: true };
+// Dev badge bottom-right so it doesn't cover the sidebar's controls.
+export default { reactStrictMode: true, devIndicators: { position: 'bottom-right' } };

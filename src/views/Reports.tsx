@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Clock, Download, FileText } from 'lucide-react';
 import { useState } from 'react';
 import { Heatmap, TypeDonut } from '../components/charts';
-import { Async, btn, Card, cx, input, Segmented, td, th } from '../components/ui';
+import { Async, btn, Card, cx, input, PageTitle, Segmented, td, th } from '../components/ui';
 import { api, qs, useIntersections } from '../services/api';
 import { useAuth } from '../store/auth';
 import { pushToast } from '../store/live';
@@ -169,7 +169,7 @@ export default function Reports() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="mr-auto text-xl font-semibold tracking-tight">Reports</h1>
+        <PageTitle title="Reports" sub="The busiest traffic times by day or week. Export to PDF for meetings." />
         <Segmented label="Report type" value={kind} onChange={setKind} options={KINDS} />
         <select aria-label="Scope" value={scope} onChange={(e) => setScope(e.target.value)} className={input}>
           <option value="ALL">All intersections</option>
