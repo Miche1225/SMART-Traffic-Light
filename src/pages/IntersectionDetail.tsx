@@ -17,7 +17,7 @@ import { handleEvent, subscribe } from '../services/ws';
 import { useLive } from '../store/live';
 import type { Approach, Intersection, LaneStatus, Paginated, SignalMode, SignalState, VehicleType, Violation } from '../types';
 import {
-  APPROACH_LABEL, APPROACHES, AXIS_STYLE, fmtDateTime, fmtTime, hourRange, manilaToday, shortHour, TOOLTIP_STYLE, VEHICLE_COLORS, VEHICLE_TYPES,
+  APPROACH_LABEL, APPROACHES, AXIS_STYLE, fmtDateTime, fmtTime, GRID, hourRange, manilaToday, shortHour, TOOLTIP_STYLE, VEHICLE_COLORS, VEHICLE_TYPES,
 } from '../utils/format';
 
 const TABS = ['Live', 'Analytics', 'Violations', 'Devices'] as const;
@@ -148,9 +148,9 @@ function AnalyticsTab({ id }: { id: string }) {
               <Card title="Hourly volume" actions={<span className="text-xs text-orange-300">Peak: {hourRange(peak.hour)} ({peak.total.toLocaleString()})</span>}>
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={rows}>
-                    <CartesianGrid stroke="#1e293b" vertical={false} />
+                    <CartesianGrid stroke={GRID} vertical={false} />
                     <XAxis dataKey="hour" {...AXIS_STYLE} /><YAxis {...AXIS_STYLE} width={44} />
-                    <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: '#1e293b' }} />
+                    <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: GRID }} />
                     <Bar dataKey="total" name="Vehicles" isAnimationActive={false}>
                       {hours.map((h) => <Cell key={h.hour} fill={h.hour === peak.hour ? '#f97316' : '#38bdf8'} />)}
                     </Bar>
@@ -160,9 +160,9 @@ function AnalyticsTab({ id }: { id: string }) {
               <Card title="Vehicle types per hour">
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={rows}>
-                    <CartesianGrid stroke="#1e293b" vertical={false} />
+                    <CartesianGrid stroke={GRID} vertical={false} />
                     <XAxis dataKey="hour" {...AXIS_STYLE} /><YAxis {...AXIS_STYLE} width={44} />
-                    <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: '#1e293b' }} />
+                    <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: GRID }} />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
                     {VEHICLE_TYPES.map((t: VehicleType) => <Bar key={t} dataKey={t} stackId="t" fill={VEHICLE_COLORS[t]} isAnimationActive={false} />)}
                   </BarChart>
@@ -172,7 +172,7 @@ function AnalyticsTab({ id }: { id: string }) {
               <Card title="Average speed (km/h)" className="xl:col-span-2">
                 <ResponsiveContainer width="100%" height={220}>
                   <LineChart data={rows}>
-                    <CartesianGrid stroke="#1e293b" vertical={false} />
+                    <CartesianGrid stroke={GRID} vertical={false} />
                     <XAxis dataKey="hour" {...AXIS_STYLE} /><YAxis {...AXIS_STYLE} width={44} />
                     <Tooltip contentStyle={TOOLTIP_STYLE} />
                     <Line dataKey="speed" name="Avg speed" stroke="#10b981" dot={false} strokeWidth={2} isAnimationActive={false} />

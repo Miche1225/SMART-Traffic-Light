@@ -31,7 +31,7 @@ export default function Login() {
             <span className="size-14 rounded-full bg-green-500 opacity-15 shadow-[0_0_28px_6px] shadow-green-500/60 motion-safe:animate-lamp-green" />
           </div>
           <div>
-            <h2 className="text-4xl font-semibold leading-tight tracking-tight text-white">Smarter signals.<br />Safer streets.</h2>
+            <h2 className="text-4xl font-semibold leading-tight tracking-tight text-slate-100">Smarter signals.<br />Safer streets.</h2>
             <ul className="mt-6 space-y-3 text-sm text-slate-300">
               <li className="flex items-center gap-3"><Video className="size-4 text-sky-300" />Live AI vehicle detection on every camera</li>
               <li className="flex items-center gap-3"><Gauge className="size-4 text-sky-300" />Automatic over-speeding evidence capture</li>

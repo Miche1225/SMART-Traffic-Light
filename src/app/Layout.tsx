@@ -1,6 +1,6 @@
-import { Bell, ClipboardList, FileBarChart, Gauge, LayoutDashboard, LogOut, Maximize, Menu, Minimize, Search, Settings, TrafficCone, Video, Volume2, VolumeX, WifiOff } from 'lucide-react';
+import { Bell, ClipboardList, FileBarChart, Gauge, LayoutDashboard, LogOut, Maximize, Menu, Minimize, MonitorPlay, Moon, Search, Settings, Sun, TrafficCone, Video, Volume2, VolumeX, WifiOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { CommandPalette, type Command } from '../components/CommandPalette';
 import { cx, Toaster } from '../components/ui';
 import { useAlerts } from '../services/api';
@@ -61,7 +61,21 @@ function useFullscreen() {
 
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
 
-function Topbar({ onMenu, onSearch }: { onMenu: () => void; onSearch: () => void }) {
+function useTheme() {
+  const [light, setLight] = useState(() => document.documentElement.classList.contains('light'));
+  const toggle = () => {
+    const next = document.documentElement.classList.toggle('light');
+    setLight(next);
+    try { localStorage.setItem('stl-theme', next ? 'light' : 'dark'); } catch { /* per-session only */ }
+  };
+  return [light, toggle] as const;
+}
+
+// shortcut: fixed 30s per page and fixed stops; make them settings when Settings CRUD lands.
+const ROTATE_MS = 30_000;
+const ROTATE_STOPS = ['/', '/live', '/alerts'];
+
+function Topbar({ onMenu, onSearch, light, onTheme, rotating, onRotate }: { onMenu: () => void; onSearch: () => void; light: boolean; onTheme: () => void; rotating: boolean; onRotate: () => void }) {
   const { user, logout } = useAuth();
   const sound = useLive((s) => s.sound);
   const full = useFullscreen();
@@ -89,6 +103,12 @@ function Topbar({ onMenu, onSearch }: { onMenu: () => void; onSearch: () => void
         <button onClick={toggleSound} aria-pressed={sound} aria-label={sound ? 'Mute critical alerts' : 'Enable critical alert sound and desktop notifications'} title="Critical alert sound & desktop notifications" className="rounded p-1.5 text-slate-400 hover:bg-slate-800">
           {sound ? <Volume2 className="size-5" /> : <VolumeX className="size-5" />}
         </button>
+        <button onClick={onTheme} aria-label={light ? 'Switch to dark theme' : 'Switch to light theme'} title="Theme" className="rounded p-1.5 text-slate-400 hover:bg-slate-800">
+          {light ? <Moon className="size-5" /> : <Sun className="size-5" />}
+        </button>
+        <button onClick={onRotate} aria-pressed={rotating} aria-label={rotating ? 'Stop wall-display rotation' : 'Start wall-display rotation'} title="Wall display: rotate pages every 30s" className={cx('rounded p-1.5 hover:bg-slate-800', rotating ? 'text-sky-300' : 'text-slate-400')}>
+          <MonitorPlay className={cx('size-5', rotating && 'motion-safe:animate-pulse')} />
+        </button>
         <button onClick={toggleFullscreen} aria-pressed={full} aria-label={full ? 'Exit full screen' : 'Full screen (control-room mode)'} title="Full screen" className="rounded p-1.5 text-slate-400 hover:bg-slate-800">
           {full ? <Minimize className="size-5" /> : <Maximize className="size-5" />}
         </button>
@@ -111,6 +131,9 @@ export default function Layout() {
   const role = useAuth((s) => s.user?.role);
   const ws = useLive((s) => s.ws);
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const [light, toggleTheme] = useTheme();
+  const [rotating, setRotating] = useState(false);
   const [collapsed, setCollapsed] = useState(() => window.innerWidth < 1024);
   const [palette, setPalette] = useState(false);
   const logout = useAuth((s) => s.logout);
@@ -123,8 +146,21 @@ export default function Layout() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
   const nav = NAV.filter((n) => !n.roles || (role && n.roles.includes(role)));
+  const stops = ROTATE_STOPS.filter((p) => nav.some((n) => n.to === p));
+  // Restarts on every navigation, so a manual page change gets a full 30s too.
+  useEffect(() => {
+    if (!rotating) return;
+    const t = setTimeout(() => navigate(stops[(stops.indexOf(pathname) + 1) % stops.length]), ROTATE_MS);
+    return () => clearTimeout(t);
+  }, [rotating, pathname, stops.join()]);
+  const toggleRotate = () => {
+    if (!rotating && !document.fullscreenElement) toggleFullscreen();
+    setRotating((r) => !r);
+  };
   const commands: Command[] = [
     ...nav.map((n) => ({ id: `page${n.to}`, label: n.label, group: 'Page', icon: <n.icon className="size-4" />, to: n.to })),
+    { id: 'act-theme', label: light ? 'Switch to dark theme' : 'Switch to light theme', group: 'Action', icon: light ? <Moon className="size-4" /> : <Sun className="size-4" />, run: toggleTheme },
+    { id: 'act-rotate', label: rotating ? 'Stop wall-display rotation' : 'Start wall-display rotation', group: 'Action', icon: <MonitorPlay className="size-4" />, run: toggleRotate },
     { id: 'act-full', label: 'Toggle full screen', group: 'Action', icon: <Maximize className="size-4" />, run: toggleFullscreen },
     { id: 'act-sound', label: 'Toggle critical alert sound & notifications', group: 'Action', icon: <Volume2 className="size-4" />, run: toggleSound },
     { id: 'act-out', label: 'Sign out', group: 'Action', icon: <LogOut className="size-4" />, run: logout },
@@ -147,7 +183,7 @@ export default function Layout() {
         ))}
       </nav>
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar onMenu={() => setCollapsed((c) => !c)} onSearch={() => setPalette(true)} />
+        <Topbar onMenu={() => setCollapsed((c) => !c)} onSearch={() => setPalette(true)} light={light} onTheme={toggleTheme} rotating={rotating} onRotate={toggleRotate} />
         {ws === 'reconnecting' && (
           <div role="status" className="flex items-center gap-2 bg-yellow-900/60 px-4 py-1.5 text-sm text-yellow-200">
             <WifiOff className="size-4" /> Reconnecting to live feed…
