@@ -1,6 +1,6 @@
 import { useQueries } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { Async, Card, CongestionBadge, cx, input, StatusBadge, td, th } from '../components/ui';
 import { hourlyQuery, useCameras, useIntersections, useSensors } from '../services/api';
 import { manilaToday } from '../utils/format';
@@ -48,7 +48,7 @@ export default function Intersections() {
                     .filter(({ i }) => i.name.toLowerCase().includes(q.toLowerCase()) && (!brgy || i.barangay === brgy) && (!status || i.status === status))
                     .map(({ i, today: n }) => (
                       <tr key={i.id} className="hover:bg-slate-800/40">
-                        <td className={td}><Link to={`/intersections/${i.id}`} className="font-medium text-sky-300 hover:underline">{i.name}</Link></td>
+                        <td className={td}><Link href={`/intersections/${i.id}`} className="font-medium text-sky-300 hover:underline">{i.name}</Link></td>
                         <td className={td}>{i.barangay}</td>
                         <td className={cx(td, 'tabular-nums')}>{i.approaches.length}</td>
                         <td className={cx(td, 'tabular-nums')}>{cams.filter((c) => c.intersectionId === i.id).length}</td>

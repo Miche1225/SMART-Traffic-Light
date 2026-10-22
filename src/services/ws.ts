@@ -2,7 +2,7 @@ import { laneKey, pushToast, useLive } from '../store/live';
 import type { WsEvent } from '../types';
 import { qc } from './queryClient';
 
-export const USE_MOCKS = import.meta.env.VITE_USE_MOCKS !== 'false';
+export const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS !== 'false';
 
 let audio: AudioContext | undefined;
 function beep() {

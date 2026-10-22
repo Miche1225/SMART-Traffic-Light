@@ -1,8 +1,10 @@
 import { Bell, ClipboardList, FileBarChart, Gauge, LayoutDashboard, LogOut, Maximize, Menu, Minimize, MonitorPlay, Moon, Search, Settings, Sun, TrafficCone, Video, Volume2, VolumeX, WifiOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { CommandPalette, type Command } from '../components/CommandPalette';
-import { cx, Toaster } from '../components/ui';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import type { ReactNode } from 'react';
+import { CommandPalette, type Command } from './CommandPalette';
+import { cx, Toaster } from './ui';
 import { useAlerts } from '../services/api';
 import { connectLive } from '../services/ws';
 import { ADMIN, OPS, useAuth } from '../store/auth';
@@ -59,7 +61,7 @@ function useFullscreen() {
   return on;
 }
 
-const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
+const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
 
 function useTheme() {
   const [light, setLight] = useState(() => document.documentElement.classList.contains('light'));
@@ -112,7 +114,7 @@ function Topbar({ onMenu, onSearch, light, onTheme, rotating, onRotate }: { onMe
         <button onClick={toggleFullscreen} aria-pressed={full} aria-label={full ? 'Exit full screen' : 'Full screen (control-room mode)'} title="Full screen" className="rounded p-1.5 text-slate-400 hover:bg-slate-800">
           {full ? <Minimize className="size-5" /> : <Maximize className="size-5" />}
         </button>
-        <Link to="/alerts" aria-label={`${unread} unacknowledged alerts`} className="relative rounded p-1.5 text-slate-400 hover:bg-slate-800">
+        <Link href="/alerts" aria-label={`${unread} unacknowledged alerts`} className="relative rounded p-1.5 text-slate-400 hover:bg-slate-800">
           <Bell className="size-5" />
           {unread > 0 && <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-red-600 px-1 text-center text-[10px] font-bold text-white tabular-nums ring-2 ring-slate-900">{unread}</span>}
         </Link>
@@ -126,12 +128,12 @@ function Topbar({ onMenu, onSearch, light, onTheme, rotating, onRotate }: { onMe
   );
 }
 
-export default function Layout() {
+export default function AppShell({ children }: { children: ReactNode }) {
   const token = useAuth((s) => s.token)!;
   const role = useAuth((s) => s.user?.role);
   const ws = useLive((s) => s.ws);
-  const { pathname } = useLocation();
-  const navigate = useNavigate();
+  const pathname = usePathname();
+  const router = useRouter();
   const [light, toggleTheme] = useTheme();
   const [rotating, setRotating] = useState(false);
   const [collapsed, setCollapsed] = useState(() => window.innerWidth < 1024);
@@ -145,12 +147,14 @@ export default function Layout() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+  // NavLink semantics: '/' matches exactly, other entries also match their sub-pages.
+  const isActive = (to: string) => (to === '/' ? pathname === '/' : pathname.startsWith(to));
   const nav = NAV.filter((n) => !n.roles || (role && n.roles.includes(role)));
   const stops = ROTATE_STOPS.filter((p) => nav.some((n) => n.to === p));
   // Restarts on every navigation, so a manual page change gets a full 30s too.
   useEffect(() => {
     if (!rotating) return;
-    const t = setTimeout(() => navigate(stops[(stops.indexOf(pathname) + 1) % stops.length]), ROTATE_MS);
+    const t = setTimeout(() => router.push(stops[(stops.indexOf(pathname) + 1) % stops.length]), ROTATE_MS);
     return () => clearTimeout(t);
   }, [rotating, pathname, stops.join()]);
   const toggleRotate = () => {
@@ -170,16 +174,16 @@ export default function Layout() {
     <div className="flex h-dvh">
       <nav aria-label="Main" className={cx('shrink-0 border-r border-slate-800/80 bg-slate-900/70 py-3 backdrop-blur transition-[width]', collapsed ? 'w-14' : 'w-56')}>
         {nav.map((n) => (
-          <NavLink
+          <Link
             key={n.to}
-            to={n.to}
-            end={n.to === '/'}
+            href={n.to}
+            aria-current={isActive(n.to) ? 'page' : undefined}
             title={n.label}
-            className={({ isActive }) => cx('relative mx-2 flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors', isActive ? 'bg-sky-500/15 text-sky-300 before:absolute before:inset-y-1.5 before:-left-2 before:w-1 before:rounded-r before:bg-sky-400' : 'text-slate-400 hover:bg-slate-800/70 hover:text-slate-200')}
+            className={cx('relative mx-2 flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors', isActive(n.to) ? 'bg-sky-500/15 text-sky-300 before:absolute before:inset-y-1.5 before:-left-2 before:w-1 before:rounded-r before:bg-sky-400' : 'text-slate-400 hover:bg-slate-800/70 hover:text-slate-200')}
           >
             <n.icon className="size-5 shrink-0" />
             <span className={cx(collapsed && 'sr-only')}>{n.label}</span>
-          </NavLink>
+          </Link>
         ))}
       </nav>
       <div className="flex min-w-0 flex-1 flex-col">
@@ -189,7 +193,7 @@ export default function Layout() {
             <WifiOff className="size-4" /> Reconnecting to live feed…
           </div>
         )}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6"><div key={pathname} className="motion-safe:animate-page-in"><Outlet /></div></main>
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6"><div key={pathname} className="motion-safe:animate-page-in">{children}</div></main>
       </div>
       <Toaster />
       <CommandPalette open={palette} onClose={() => setPalette(false)} commands={commands} />

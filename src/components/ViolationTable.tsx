@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import type { Violation } from '../types';
 import { APPROACH_LABEL, fmtDateTime } from '../utils/format';
 import { cx, td, th, ViolationStatusBadge } from './ui';
@@ -42,11 +42,11 @@ export function ViolationTable({ rows, evidence = true, selected, onSelect }: { 
                 )}
                 {evidence && (
                   <td className={td}>
-                    <Link to={`/violations/${v.id}`}><img src={v.imageUrl} alt={`Evidence ${v.id}`} className="h-10 w-16 rounded object-cover" /></Link>
+                    <Link href={`/violations/${v.id}`}><img src={v.imageUrl} alt={`Evidence ${v.id}`} className="h-10 w-16 rounded object-cover" /></Link>
                   </td>
                 )}
                 <td className={cx(td, 'whitespace-nowrap')}>
-                  {evidence ? <Link to={`/violations/${v.id}`} className="text-sky-300 hover:underline">{fmtDateTime(v.timestamp)}</Link> : fmtDateTime(v.timestamp)}
+                  {evidence ? <Link href={`/violations/${v.id}`} className="text-sky-300 hover:underline">{fmtDateTime(v.timestamp)}</Link> : fmtDateTime(v.timestamp)}
                 </td>
                 <td className={td}>{v.intersectionName}</td>
                 <td className={td}>{APPROACH_LABEL[v.approach]}</td>

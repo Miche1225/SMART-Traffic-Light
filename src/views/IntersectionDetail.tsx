@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'next/navigation';
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useShallow } from 'zustand/react/shallow';
 import { CameraTile } from '../components/CameraTile';
@@ -245,7 +245,7 @@ function DevicesTab({ id }: { id: string }) {
 }
 
 export default function IntersectionDetail() {
-  const id = useParams().id!;
+  const id = useParams<{ id: string }>().id;
   const [tab, setTab] = useState<(typeof TABS)[number]>('Live');
   const q = useQuery({ queryKey: ['intersections', id], queryFn: () => api<Intersection>(`/intersections/${id}`), refetchInterval: 5000 });
   useEffect(() => subscribe([`intersection:${id}`]), [id]);

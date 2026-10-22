@@ -1,7 +1,8 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Download } from 'lucide-react';
 import { Fragment, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { Async, btn, btnDanger, btnPrimary, Card, cx, input, useConfirm, ViolationStatusBadge } from '../components/ui';
 import { api } from '../services/api';
 import { qc } from '../services/queryClient';
@@ -45,7 +46,7 @@ function Evidence({ frames }: { frames: string[] }) {
 }
 
 export default function ViolationDetail() {
-  const id = useParams().id!;
+  const id = useParams<{ id: string }>().id;
   const user = useAuth((s) => s.user);
   const q = useQuery({ queryKey: ['violation', id], queryFn: () => api<Violation>(`/violations/${id}`) });
   const [plate, setPlate] = useState('');
@@ -92,7 +93,7 @@ export default function ViolationDetail() {
   return (
     <div className="space-y-4">
       {dialog}
-      <Link to="/violations" className="inline-flex items-center gap-1 text-sm text-sky-300 hover:underline"><ArrowLeft className="size-4" />Violations</Link>
+      <Link href="/violations" className="inline-flex items-center gap-1 text-sm text-sky-300 hover:underline"><ArrowLeft className="size-4" />Violations</Link>
       <Async q={q} skeleton="h-96">
         {(v) => {
           const reviewable = v.status === 'NEW' || v.status === 'UNDER_REVIEW';

@@ -1,6 +1,6 @@
 import { CornerDownLeft, MapPin, Search } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useIntersections } from '../services/api';
 import { cx, Dialog } from './ui';
 
@@ -8,7 +8,7 @@ export interface Command { id: string; label: string; group: string; icon: React
 
 /** Ctrl/⌘+K jump-to: pages, intersections and quick actions, fully keyboard driven. */
 export function CommandPalette({ open, onClose, commands }: { open: boolean; onClose: () => void; commands: Command[] }) {
-  const nav = useNavigate();
+  const router = useRouter();
   const ints = useIntersections().data ?? [];
   const [q, setQ] = useState('');
   const [sel, setSel] = useState(0);
@@ -23,7 +23,7 @@ export function CommandPalette({ open, onClose, commands }: { open: boolean; onC
   const run = (c?: Command) => {
     if (!c) return;
     onClose();
-    if (c.to) nav(c.to);
+    if (c.to) router.push(c.to);
     c.run?.();
   };
   const onKey = (e: React.KeyboardEvent) => {
