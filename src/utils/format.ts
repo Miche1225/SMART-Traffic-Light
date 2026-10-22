@@ -40,7 +40,8 @@ export const APPROACH_LABEL: Record<Approach, string> = { N: 'North', S: 'South'
 export const APPROACHES: Approach[] = ['N', 'S', 'E', 'W'];
 
 export const AXIS_STYLE = { stroke: '#64748b', fontSize: 12 };
-export const TOOLTIP_STYLE = { background: '#0f172a', border: '1px solid #334155', borderRadius: 8, color: '#e2e8f0' };
+export const TOOLTIP_STYLE = { background: 'var(--color-slate-900)', border: '1px solid var(--color-slate-700)', borderRadius: 8, color: 'var(--color-slate-200)' };
+export const GRID = 'var(--color-slate-800)';
 
 export function downloadUrl(url: string, name: string) {
   const a = document.createElement('a');

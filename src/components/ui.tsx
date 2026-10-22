@@ -122,7 +122,7 @@ export function Segmented<T extends string | number>({ options, value, onChange,
           role="radio"
           aria-checked={o.value === value}
           onClick={() => onChange(o.value)}
-          className={cx('rounded px-2.5 py-1 text-xs font-medium transition-colors', o.value === value ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200')}
+          className={cx('rounded px-2.5 py-1 text-xs font-medium transition-colors', o.value === value ? 'bg-slate-700 text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-200')}
         >
           {o.label}
         </button>

@@ -10,7 +10,8 @@ import { api, hourlyQuery, useAlerts, useHourly, useIntersections } from '../ser
 import { OPS, useAuth, useCan } from '../store/auth';
 import { useLive } from '../store/live';
 import type { DashboardKpi, Intersection, Paginated, VehicleType, Violation } from '../types';
-import { AXIS_STYLE, fmtDay, fmtTime, INT_COLORS, manilaHour, manilaToday, shortHour, TOOLTIP_STYLE } from '../utils/format';
+import { forecastHour } from '../utils/report';
+import { addDays, AXIS_STYLE, fmtDay, fmtTime, GRID, INT_COLORS, manilaHour, manilaToday, shortHour, TOOLTIP_STYLE } from '../utils/format';
 
 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -36,16 +37,29 @@ function CountUp({ n }: { n: number }) {
 }
 
 const ACCENT = {
-  sky: ['bg-sky-500/10 text-sky-300 ring-sky-500/20', 'bg-sky-500'],
-  violet: ['bg-violet-500/10 text-violet-300 ring-violet-500/20', 'bg-violet-500'],
-  red: ['bg-red-500/10 text-red-300 ring-red-500/20', 'bg-red-500'],
-  emerald: ['bg-emerald-500/10 text-emerald-300 ring-emerald-500/20', 'bg-emerald-500'],
-  amber: ['bg-amber-500/10 text-amber-300 ring-amber-500/20', 'bg-amber-500'],
-  cyan: ['bg-cyan-500/10 text-cyan-300 ring-cyan-500/20', 'bg-cyan-500'],
+  sky: ['bg-sky-500/10 text-sky-300 ring-sky-500/20', 'bg-sky-500', 'text-sky-400'],
+  violet: ['bg-violet-500/10 text-violet-300 ring-violet-500/20', 'bg-violet-500', 'text-violet-400'],
+  red: ['bg-red-500/10 text-red-300 ring-red-500/20', 'bg-red-500', 'text-red-400'],
+  emerald: ['bg-emerald-500/10 text-emerald-300 ring-emerald-500/20', 'bg-emerald-500', 'text-emerald-400'],
+  amber: ['bg-amber-500/10 text-amber-300 ring-amber-500/20', 'bg-amber-500', 'text-amber-400'],
+  cyan: ['bg-cyan-500/10 text-cyan-300 ring-cyan-500/20', 'bg-cyan-500', 'text-cyan-400'],
 };
 
-function Kpi({ icon: Icon, label, value, sub, hint, accent = 'sky' }: { icon: LucideIcon; label: string; value: ReactNode; sub?: ReactNode; hint?: string; accent?: keyof typeof ACCENT }) {
-  const [chip, glow] = ACCENT[accent];
+/** Tiny trend line, no axes; the tile's number carries the value. */
+function Sparkline({ values, className }: { values: number[]; className: string }) {
+  if (values.length < 2) return null;
+  const max = Math.max(1, ...values);
+  const pts = values.map((v, i) => `${(i / (values.length - 1)) * 100},${30 - (v / max) * 28}`).join(' ');
+  return (
+    <svg viewBox="0 0 100 30" preserveAspectRatio="none" className={cx('mt-2 h-8 w-full', className)} aria-hidden>
+      <polygon points={`0,30 ${pts} 100,30`} fill="currentColor" opacity="0.15" />
+      <polyline points={pts} fill="none" stroke="currentColor" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+    </svg>
+  );
+}
+
+function Kpi({ icon: Icon, label, value, sub, hint, accent = 'sky', spark }: { icon: LucideIcon; label: string; value: ReactNode; sub?: ReactNode; hint?: string; accent?: keyof typeof ACCENT; spark?: number[] }) {
+  const [chip, glow, line] = ACCENT[accent];
   return (
     <div className="group relative min-w-0 overflow-hidden rounded-xl border border-slate-800/80 bg-slate-900/80 p-4 shadow-lg shadow-black/10 backdrop-blur transition-colors hover:border-slate-700" title={hint}>
       <span className={cx('pointer-events-none absolute -right-8 -top-8 size-24 rounded-full opacity-20 blur-2xl transition-opacity group-hover:opacity-40', glow)} aria-hidden />
@@ -55,6 +69,7 @@ function Kpi({ icon: Icon, label, value, sub, hint, accent = 'sky' }: { icon: Lu
       </div>
       <div className="relative mt-2 truncate text-2xl font-semibold tracking-tight tabular-nums">{value}</div>
       {sub && <div className="relative mt-0.5 truncate text-xs text-slate-500">{sub}</div>}
+      {spark && <Sparkline values={spark} className={cx('relative', line)} />}
     </div>
   );
 }
@@ -62,6 +77,7 @@ function Kpi({ icon: Icon, label, value, sub, hint, accent = 'sky' }: { icon: Lu
 function KpiRow() {
   const q = useQuery({ queryKey: ['kpi'], queryFn: () => api<DashboardKpi>('/dashboard/summary') });
   const k = useLive((s) => s.kpi) ?? q.data;
+  const hourly = useHourly('ALL', manilaToday()).data?.slice(0, manilaHour() + 1).map((h) => h.total);
   if (!k)
     return q.isError ? <Async q={q}>{() => null}</Async> : (
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 2xl:grid-cols-6">{Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-24" />)}</div>
@@ -70,7 +86,7 @@ function KpiRow() {
   const offline = k.offlineCameras.length ? `Offline: ${k.offlineCameras.join(', ')}` : 'All cameras online';
   return (
     <div className="grid grid-cols-2 gap-4 md:grid-cols-3 2xl:grid-cols-6">
-      <Kpi icon={Car} label="Vehicles Today" value={<CountUp n={k.vehiclesToday} />} sub={<><span className={pct >= 0 ? 'text-green-400' : 'text-red-400'}>{pct >= 0 ? '▲' : '▼'} {Math.abs(pct).toFixed(1)}%</span> vs yesterday</>} />
+      <Kpi icon={Car} label="Vehicles Today" spark={hourly} value={<CountUp n={k.vehiclesToday} />} sub={<><span className={pct >= 0 ? 'text-green-400' : 'text-red-400'}>{pct >= 0 ? '▲' : '▼'} {Math.abs(pct).toFixed(1)}%</span> vs yesterday</>} />
       <Kpi accent="violet" icon={TrendingUp} label="Current Peak Intersection" value={k.peakIntersection.name} sub={`${k.peakIntersection.perMin} vehicles/min`} hint={k.peakIntersection.name} />
       <Kpi accent="red" icon={Gauge} label="Over-speeding Today" value={<CountUp n={k.overspeedToday} />} sub={k.lastOverspeedAt ? `latest at ${fmtTime(k.lastOverspeedAt)}` : 'none yet'} />
       <Kpi accent="emerald" icon={Video} label="Cameras Online" value={`${k.camerasOnline} / ${k.camerasTotal}`} sub={offline} hint={offline} />
@@ -80,7 +96,37 @@ function KpiRow() {
   );
 }
 
-function IntersectionCard({ i }: { i: Intersection }) {
+const FORECAST_DAYS = 7;
+
+/** Per intersection: expected vehicles this hour and next, from the same hours over the past week. */
+function useForecast(ints: Intersection[]) {
+  const today = manilaToday();
+  const days = Array.from({ length: FORECAST_DAYS }, (_, k) => addDays(today, -1 - k));
+  // Past days never change, so fetch once per session.
+  const qs = useQueries({ queries: ints.flatMap((i) => days.map((d) => ({ ...hourlyQuery(i.id, d), refetchInterval: false as const, staleTime: Infinity }))) });
+  const h = manilaHour();
+  return Object.fromEntries(ints.map((i, n) => {
+    const past = qs.slice(n * FORECAST_DAYS, (n + 1) * FORECAST_DAYS).map((q) => q.data?.map((x) => x.total));
+    return [i.id, { now: forecastHour(past, h), next: forecastHour(past, h + 1) }];
+  }));
+}
+
+function Forecast({ f }: { f?: { now: number | null; next: number | null } }) {
+  if (f?.next == null) return null;
+  const delta = f.now ? (f.next / f.now - 1) * 100 : 0;
+  const tone = delta > 10 ? 'text-orange-400' : delta < -10 ? 'text-green-400' : 'text-slate-400';
+  return (
+    <div className="mt-2 flex items-center justify-between gap-2 rounded-md bg-slate-900/60 px-2 py-1 text-xs" title={`Average of the same hour over the past ${FORECAST_DAYS} days`}>
+      <span className="text-slate-400">Next hour <span className="text-slate-500">(est.)</span></span>
+      <span>
+        <b className="tabular-nums text-slate-200">~{f.next.toLocaleString()}</b>
+        <span className={cx('ml-1.5', tone)}>{delta > 10 ? '▲ busier' : delta < -10 ? '▼ quieter' : '≈ steady'}</span>
+      </span>
+    </div>
+  );
+}
+
+function IntersectionCard({ i, forecast }: { i: Intersection; forecast?: { now: number | null; next: number | null } }) {
   const sig = useLive((s) => s.signals[i.id]);
   const last5 = useLive((s) => Object.values(s.lanes).reduce((n, l) => (l.intersectionId === i.id ? n + l.sensor.countLast5Min : n), 0));
   return (
@@ -96,6 +142,7 @@ function IntersectionCard({ i }: { i: Intersection }) {
         {sig ? sig.phases.map((p) => <SignalLight key={p.approach} color={p.color} label={p.approach} sec={p.remainingSec} />) : <Skeleton className="col-span-2 h-10" />}
       </div>
       <div className="mt-2 text-xs text-slate-400"><span className="tabular-nums text-slate-200">{last5}</span> vehicles in last 5 min</div>
+      <Forecast f={forecast} />
     </Link>
   );
 }
@@ -150,7 +197,7 @@ function VolumeCard() {
                   <stop offset="100%" stopColor="#38bdf8" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid stroke="#1e293b" vertical={false} />
+              <CartesianGrid stroke={GRID} vertical={false} />
               <XAxis dataKey="hour" {...AXIS_STYLE} />
               <YAxis {...AXIS_STYLE} width={44} />
               <Tooltip contentStyle={TOOLTIP_STYLE} />
@@ -194,7 +241,7 @@ function Hero() {
       <div className="relative flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-widest text-sky-300/80">{fmtDay(manilaToday())}</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white">{greet}{name && `, ${name}`}</h1>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-100">{greet}{name && `, ${name}`}</h1>
           <p className="mt-1 text-sm text-slate-400">
             {unread == null ? 'Checking city traffic…'
               : critical ? <><b className="text-red-300">{critical} critical</b> of {unread.length} open alerts need attention.</>
@@ -212,6 +259,7 @@ function Hero() {
 export default function Dashboard() {
   const evidence = useCan(OPS);
   const ints = useIntersections();
+  const forecast = useForecast(ints.data ?? []);
   const recent = useQuery({ queryKey: ['violations', { size: 10 }], queryFn: () => api<Paginated<Violation>>('/violations?size=10') });
   return (
     <div className="space-y-4">
@@ -219,7 +267,7 @@ export default function Dashboard() {
       <KpiRow />
       <div className="grid gap-4 xl:grid-cols-3">
         <Card title="Intersections" className="xl:col-span-2">
-          <Async q={ints} skeleton="h-48">{(list) => <div className="grid gap-3 sm:grid-cols-2">{list.map((i) => <IntersectionCard key={i.id} i={i} />)}</div>}</Async>
+          <Async q={ints} skeleton="h-48">{(list) => <div className="grid gap-3 sm:grid-cols-2">{list.map((i) => <IntersectionCard key={i.id} i={i} forecast={forecast[i.id]} />)}</div>}</Async>
         </Card>
         <AlertsFeed />
       </div>
