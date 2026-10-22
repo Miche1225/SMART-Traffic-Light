@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+@theme {
+  --animate-toast-in: toast-in 0.2s ease-out;
+  --animate-page-in: page-in 0.35s ease-out;
+  --animate-lamp-red: lamp-red 8s infinite;
+  --animate-lamp-green: lamp-green 8s infinite;
+  --animate-lamp-yellow: lamp-yellow 8s infinite;
+  @keyframes lamp-red { 0%, 44% { opacity: 1; } 45%, 100% { opacity: 0.15; } }
+  @keyframes lamp-green { 0%, 44% { opacity: 0.15; } 45%, 84% { opacity: 1; } 85%, 100% { opacity: 0.15; } }
+  @keyframes lamp-yellow { 0%, 84% { opacity: 0.15; } 85%, 100% { opacity: 1; } }
+  @keyframes page-in {
+    from { opacity: 0; transform: translateY(0.375rem); }
+  }
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(0.5rem) scale(0.98); }
+  }
+}
+
+:root { color-scheme: dark; }
+/* Toggled by the sun/moon button; set before first paint by index.html. */
+:root.light {
+  color-scheme: light;
+  --color-slate-950: oklch(98.4% 0.003 247.858);
+  --color-slate-900: #fff;
+  --color-slate-800: oklch(92.9% 0.013 255.508);
+  --color-slate-700: oklch(86.9% 0.022 252.894);
+  --color-slate-600: oklch(70.4% 0.04 256.788);
+  --color-slate-400: oklch(44.6% 0.043 257.281);
+  --color-slate-300: oklch(37.2% 0.044 257.287);
+  --color-slate-200: oklch(27.9% 0.041 260.031);
+  --color-slate-100: oklch(20.8% 0.042 265.755);
+  --color-slate-50: oklch(12.9% 0.042 264.695);
+  --color-sky-200: oklch(44.3% 0.11 240.79);
+  --color-sky-300: oklch(50% 0.134 242.749);
+  --color-sky-400: oklch(58.8% 0.158 241.966);
+  --color-sky-900: oklch(95.1% 0.026 236.824);
+  --color-sky-950: oklch(97.7% 0.013 236.62);
+  --color-green-200: oklch(44.8% 0.119 151.328);
+  --color-green-300: oklch(52.7% 0.154 150.069);
+  --color-green-400: oklch(62.7% 0.194 149.214);
+  --color-green-900: oklch(96.2% 0.044 156.743);
+  --color-green-950: oklch(98.2% 0.018 155.826);
+  --color-yellow-200: oklch(47.6% 0.114 61.907);
+  --color-yellow-300: oklch(55.4% 0.135 66.442);
+  --color-yellow-400: oklch(68.1% 0.162 75.834);
+  --color-yellow-900: oklch(97.3% 0.071 103.193);
+  --color-yellow-950: oklch(98.7% 0.026 102.212);
+  --color-orange-200: oklch(47% 0.157 37.304);
+  --color-orange-300: oklch(55.3% 0.195 38.402);
+  --color-orange-400: oklch(64.6% 0.222 41.116);
+  --color-orange-900: oklch(95.4% 0.038 75.164);
+  --color-orange-950: oklch(98% 0.016 73.684);
+  --color-red-200: oklch(44.4% 0.177 26.899);
+  --color-red-300: oklch(50.5% 0.213 27.518);
+  --color-red-400: oklch(57.7% 0.245 27.325);
+  --color-red-900: oklch(93.6% 0.032 17.717);
+  --color-red-950: oklch(97.1% 0.013 17.38);
+  --color-amber-200: oklch(47.3% 0.137 46.201);
+  --color-amber-300: oklch(55.5% 0.163 48.998);
+  --color-amber-400: oklch(66.6% 0.179 58.318);
+  --color-amber-900: oklch(96.2% 0.059 95.617);
+  --color-amber-950: oklch(98.7% 0.022 95.277);
+  --color-violet-200: oklch(43.2% 0.232 292.759);
+  --color-violet-300: oklch(49.1% 0.27 292.581);
+  --color-violet-400: oklch(54.1% 0.281 293.009);
+  --color-violet-900: oklch(94.3% 0.029 294.588);
+  --color-violet-950: oklch(96.9% 0.016 293.756);
+  --color-emerald-200: oklch(43.2% 0.095 166.913);
+  --color-emerald-300: oklch(50.8% 0.118 165.612);
+  --color-emerald-400: oklch(59.6% 0.145 163.225);
+  --color-emerald-900: oklch(95% 0.052 163.051);
+  --color-emerald-950: oklch(97.9% 0.021 166.113);
+  --color-cyan-200: oklch(45% 0.085 224.283);
+  --color-cyan-300: oklch(52% 0.105 223.128);
+  --color-cyan-400: oklch(60.9% 0.126 221.723);
+  --color-cyan-900: oklch(95.6% 0.045 203.388);
+  --color-cyan-950: oklch(98.4% 0.019 200.873);
+  --color-indigo-200: oklch(39.8% 0.195 277.366);
+  --color-indigo-300: oklch(45.7% 0.24 277.023);
+  --color-indigo-400: oklch(51.1% 0.262 276.966);
+  --color-indigo-900: oklch(93% 0.034 272.788);
+  --color-indigo-950: oklch(96.2% 0.018 272.314);
+}
+body {
+  @apply bg-slate-950 text-slate-200 antialiased;
+  font-family: 'Public Sans', system-ui, sans-serif;
+}
+/* Dark mode: deep blue-grey with a soft lift at the top, so it isn't flat black. */
+:root:not(.light) body { background: linear-gradient(180deg, #111c30 0%, #0b1220 420px) fixed; }
+::selection { @apply bg-sky-500/30 text-white; }
+
+* { scrollbar-width: thin; scrollbar-color: var(--color-slate-700) transparent; }
+
+/* Applies to every table and form control at once, so pages stay untouched. */
+@layer base {
+  thead { @apply bg-slate-950/50; }
+  tbody tr { @apply transition-colors; }
+  tbody tr:hover { @apply bg-slate-800/40; }
+  input[type="checkbox"] { accent-color: var(--color-sky-500); }
+  select option { @apply bg-slate-900; }
+}
